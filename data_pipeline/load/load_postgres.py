@@ -68,7 +68,7 @@ def save_commits(commits_data, repo_id):
         commit_data = c.get("commit", {})
         author_data = commit_data.get("author") or {}
 
-        # sha = c.get("sha")
+        sha = c.get("sha")
 
         # existing = db.query(Commit).filter_by(sha=sha).first()
         # if existing:

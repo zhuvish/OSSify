@@ -14,10 +14,9 @@ from data_pipeline.load.load_postgres import (
 )
 
 def process_repository(repo_url: str):
-    # Step 1: parse repo
+
     repo_name = parse_github_url(repo_url)
 
-    # Step 2: fetch data
     contributors = fetch_contributors(repo_name)
     commits = fetch_commits(repo_name)
     prs = fetch_prs(repo_name)
@@ -26,7 +25,12 @@ def process_repository(repo_url: str):
     if not commits:
         commits = []
 
-    # Step 3: save data
+    print("Fetching contributors...")
+    print("Fetching commits...")
+    print("Saving repository...")
+    print("Saving contributors...")
+    print("Saving commits...")
+
     save_contributors(contributors)
     repo_id = save_repository(repo_name, repo_url)
 
