@@ -10,7 +10,7 @@ def fetch_issues(repo_name):
     issues = client.get_all_pages(
         endpoint,
         params={"state": "all"},
-        max_pages=5
+        max_pages=3
     )
 
     issues = [issue for issue in issues if "pull_request" not in issue]

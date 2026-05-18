@@ -27,7 +27,7 @@ class GitHubClient:
         remaining = response.headers.get("X-RateLimit-Remaining")
         print("Rate limit remaining:", remaining)
 
-         if response.status_code != 200:
+        if response.status_code != 200:
             print(f"GitHub API Error {response.status_code}")
             print(response.text)
             return None

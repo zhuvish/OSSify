@@ -1,7 +1,10 @@
+from data_pipeline.extract.fetch_repos import fetch_repo
 from data_pipeline.extract.fetch_commits import fetch_commits
 from data_pipeline.extract.fetch_prs import fetch_prs
 from data_pipeline.extract.fetch_issues import fetch_issues
 from data_pipeline.extract.fetch_contributors import fetch_contributors
+from data_pipeline.extract.fetch_commit_details import fetch_commit_details
+from data_pipeline.extract.fetch_user import fetch_user
 
 from data_pipeline.utils.repo_parser import parse_github_url
 
@@ -9,6 +12,7 @@ from data_pipeline.load.load_postgres import (
     save_repository,
     save_commits,
     save_contributors,
+    save_commit_files,
     save_issues,
     save_prs
 )
@@ -18,58 +22,47 @@ def process_repository(repo_url: str):
         print("\n========== STARTING REPO PROCESS ==========")
 
         repo_name = parse_github_url(repo_url)
-        print(f"Parsed Repo: {repo_name}")
 
-        print("\nFetching contributors...")
+        print("Fetching repository metadata...")
+        repo_data = fetch_repo(repo_name)
+
+        print("Fetching contributors...")
         contributors = fetch_contributors(repo_name)
-        contributors_count = len(contributors) if contributors else 0
-        print(f"Fetched contributors: {contributors_count}")
 
-        print("\nFetching commits...")
-        commits = fetch_commits(repo_name)
-        commits_count = len(commits) if commits else 0
-        print(f"Fetched commits: {commits_count}")
+        print("Saving repository...")
+        repo_id = save_repository(repo_data)
 
-        print("\nFetching pull requests...")
-        prs = fetch_prs(repo_name)
-        prs_count = len(prs) if prs else 0
-        print(f"Fetched PRs: {prs_count}")
-
-        print("\nFetching issues...")
-        issues = fetch_issues(repo_name)
-        issues_count = len(issues) if issues else 0
-        print(f"Fetched issues: {issues_count}")
-
-        print("\nSaving repository...")
-        repo_id = save_repository(repo_name, repo_url)
-        print(f"Repository saved with ID: {repo_id}")
-
-        print("\nSaving contributors...")
+        print("Saving contributors...")
         save_contributors(contributors)
-        print("Contributors saved successfully.")
 
-        print("\nSaving commits...")
-        save_commits(commits, repo_id)
-        print("Commits saved successfully.")
+        print("Fetching commits...")
+        commits = fetch_commits(repo_name)
 
-        print("\nSaving pull requests...")
+        enriched_commits = []
+
+        for c in commits[:50]:
+            details = fetch_commit_details(repo_name, c["sha"])
+
+            if details:
+                c["details"] = details
+
+            enriched_commits.append(c)
+
+        print("Saving commits...")
+        commit_map = save_commits(enriched_commits, repo_id)
+
+        print("Saving commit files...")
+        save_commit_files(enriched_commits, commit_map)
+
+        print("Fetching PRs...")
+        prs = fetch_prs(repo_name)
         save_prs(prs, repo_id)
-        print("Pull requests saved successfully.")
 
-        print("\nSaving issues...")
+        print("Fetching issues...")
+        issues = fetch_issues(repo_name)
         save_issues(issues, repo_id)
-        print("Issues saved successfully.")
 
-        print("\n========== PROCESS COMPLETE ==========\n")
-
-        return {
-            "status": "success",
-            "repository": repo_name,
-            "contributors": contributors_count,
-            "commits": commits_count,
-            "pull_requests": prs_count,
-            "issues": issues_count
-        }
+        print("========== PROCESS COMPLETE ==========")
 
     except Exception as e:
 
