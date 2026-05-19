@@ -17,6 +17,8 @@ from data_pipeline.load.load_postgres import (
     save_prs
 )
 
+from backend.app.services.expertise_service import compute_expertise
+
 def process_repository(repo_url: str):
     try:
         print("\n========== STARTING REPO PROCESS ==========")
@@ -61,6 +63,9 @@ def process_repository(repo_url: str):
         print("Fetching issues...")
         issues = fetch_issues(repo_name)
         save_issues(issues, repo_id)
+
+        print("Computing expertise...")
+        compute_expertise()
 
         print("========== PROCESS COMPLETE ==========")
 
