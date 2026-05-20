@@ -4,5 +4,6 @@
 __pycache__/
 .github/
 .git/
-GEMINI.mdexternal_repos/
+GEMINI.md
+external_repos/
 rag_pipeline/extraction/*.json
