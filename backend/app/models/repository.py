@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, String
+from sqlalchemy import Column, Integer, String, DateTime
 from sqlalchemy.orm import relationship
 
 from backend.app.db.postgres import Base
@@ -11,6 +11,14 @@ class Repository(Base):
     owner = Column(String, nullable=False)
     full_name = Column(String, unique=True, nullable=False, index=True)
     url = Column(String, nullable=False)
-    commits = relationship("Commit", back_populates="repository")
-    pull_requests = relationship("PullRequest", back_populates="repository")
-    issues = relationship("Issue", back_populates="repository")
+    description = Column(String)
+    primary_language = Column(String)
+    stars = Column(Integer)
+    forks = Column(Integer)
+    open_issues_count = Column(Integer)
+    default_branch = Column(String)
+    github_created_at = Column(DateTime)
+    github_updated_at = Column(DateTime)
+    commits = relationship("Commit", back_populates="repository", cascade="all, delete-orphan")
+    pull_requests = relationship("PullRequest", back_populates="repository", cascade="all, delete-orphan")
+    issues = relationship("Issue", back_populates="repository", cascade="all, delete-orphan")

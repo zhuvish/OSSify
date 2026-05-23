@@ -7,3 +7,4 @@ __pycache__/
 GEMINI.md
 external_repos/
 rag_pipeline/extraction/*.json
+*.pyc
