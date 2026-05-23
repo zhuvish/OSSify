@@ -11,4 +11,6 @@ class ContributorExpertise(Base):
     domain = Column(String, nullable=False, index=True)
     score = Column(Float, default=0.0)
     evidence_count = Column(Integer, default=0)
+    source = Column(String, nullable=False)
+    confidence = Column(Float, default=0.5)
     contributor = relationship("Contributor")
