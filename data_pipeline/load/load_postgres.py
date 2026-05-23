@@ -92,108 +92,112 @@ def save_contributors(contributors_data):
 def save_commits(commits_data, repo_id):
     db = SessionLocal()
 
-    commit_map = {}
+    try:
+        if not commits_data:
+            return {}
 
-    for c in commits_data:
-        sha = c["sha"]
+        commit_map = {}
 
-        existing = db.query(Commit).filter_by(
-            sha=sha
-        ).first()
+        for c in commits_data:
+            if "commit" not in c:
+                continue
 
-        if existing:
-            commit_map[sha] = existing.id
-            continue
+            sha = c.get("sha")
 
-        author_login = None
-        contributor = None
+            existing = db.query(Commit).filter_by(sha=sha).first()
 
-        if c.get("author"):
-            author_login = c["author"].get("login")
+            if existing:
+                commit_map[sha] = existing.id
+                continue
 
-        if author_login:
-            contributor = db.query(Contributor).filter_by(
-                username=author_login
-            ).first()
+            contributor = None
+            author_login = None
 
-        if not contributor:
-            commit_email = c["commit"]["author"].get("email")
+            if c.get("author"):
+                author_login = c["author"].get("login")
 
-            if commit_email:
-                contributor = db.query(Contributor).filter(
-                    Contributor.profile_url.ilike(f"%{c['commit']['author']['name']}%")
+            if author_login:
+                contributor = db.query(Contributor).filter_by(
+                    username=author_login
                 ).first()
 
-        commit_details = c.get("details", {})
+            if not contributor:
+                author_name = c["commit"].get("author", {}).get("name")
 
-        stats = commit_details.get("stats", {})
+                if author_name:
+                    contributor = db.query(Contributor).filter(
+                        Contributor.display_name.ilike(author_name)
+                    ).first()
 
-        commit_obj = Commit(
-            sha=sha,
-            message=c["commit"]["message"],
-            author_name=c["commit"]["author"]["name"],
-            author_email=c["commit"]["author"]["email"],
-            date=parse_datetime(c["commit"]["author"]["date"]),
-            additions=stats.get("additions"),
-            deletions=stats.get("deletions"),
-            total_changes=stats.get("total"),
-            commit_url=c.get("html_url"),
-            repo_id=repo_id,
-            contributor_id=contributor.id if contributor else None
-        )
+            stats = c.get("stats", {})
 
-        db.add(commit_obj)
-        db.flush()
+            commit_data = c.get("commit", {})
+            author_data = commit_data.get("author") or {}
 
-        commit_map[sha] = commit_obj.id
+            commit_obj = Commit(
+                sha=sha,
+                message=commit_data.get("message"),
+                author_name=author_data.get("name"),
+                author_email=author_data.get("email"),
+                date=parse_datetime(author_data.get("date")),
+                additions=stats.get("additions"),
+                deletions=stats.get("deletions"),
+                total_changes=stats.get("total"),
+                commit_url=c.get("html_url"),
+                repo_id=repo_id,
+                contributor_id=contributor.id if contributor else None
+            )
 
-    db.commit()
-    db.close()
+            db.add(commit_obj)
+            db.flush()
 
-    return commit_map
+            commit_map[sha] = commit_obj.id
+
+        db.commit()
+        return commit_map
+
+    finally:
+        db.close()
 
 
 def save_commit_files(commits_data, commit_map):
     db = SessionLocal()
 
-    for c in commits_data:
-        sha = c["sha"]
+    try:
+        for commit in commits_data:
+            sha = commit.get("sha")
 
-        commit_id = commit_map.get(sha)
-
-        if not commit_id:
-            continue
-
-        files = c.get("details", {}).get("files", [])
-
-        for f in files:
-            existing = db.query(CommitFile).filter_by(
-                commit_id=commit_id,
-                filename=f["filename"]
-            ).first()
-
-            if existing:
+            if sha not in commit_map:
                 continue
 
-            ext = None
+            commit_id = commit_map[sha]
 
-            if "." in f["filename"]:
-                ext = f["filename"].split(".")[-1]
+            files = commit.get("files", [])
 
-            file_obj = CommitFile(
-                commit_id=commit_id,
-                filename=f["filename"],
-                file_extension=ext,
-                additions=f.get("additions"),
-                deletions=f.get("deletions"),
-                changes=f.get("changes"),
-                status=f.get("status")
-            )
+            for file in files:
+                filename = file.get("filename")
 
-            db.add(file_obj)
+                extension = None
 
-    db.commit()
-    db.close()
+                if filename and "." in filename:
+                    extension = filename.split(".")[-1]
+
+                commit_file = CommitFile(
+                    commit_id=commit_id,
+                    filename=filename,
+                    file_extension=extension,
+                    additions=file.get("additions"),
+                    deletions=file.get("deletions"),
+                    changes=file.get("changes"),
+                    status=file.get("status")
+                )
+
+                db.add(commit_file)
+
+        db.commit()
+
+    finally:
+        db.close()
 
 
 def save_prs(prs_data, repo_id):

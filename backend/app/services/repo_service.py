@@ -1,10 +1,12 @@
 from data_pipeline.extract.fetch_repos import fetch_repo
-from data_pipeline.extract.fetch_commits import fetch_commits
 from data_pipeline.extract.fetch_prs import fetch_prs
 from data_pipeline.extract.fetch_issues import fetch_issues
 from data_pipeline.extract.fetch_contributors import fetch_contributors
+from data_pipeline.extract.fetch_contributor_commits import fetch_contributor_commits
 from data_pipeline.extract.fetch_commit_details import fetch_commit_details
-from data_pipeline.extract.fetch_user import fetch_user
+
+from backend.app.models.contributor import Contributor
+from backend.app.db.postgres import SessionLocal
 
 from data_pipeline.utils.repo_parser import parse_github_url
 
@@ -17,6 +19,7 @@ from data_pipeline.load.load_postgres import (
     save_prs
 )
 
+from backend.app.services.lightweight_expertise_service import compute_lightweight_expertise
 from backend.app.services.expertise_service import compute_expertise
 
 def process_repository(repo_url: str):
@@ -37,25 +40,6 @@ def process_repository(repo_url: str):
         print("Saving contributors...")
         save_contributors(contributors)
 
-        print("Fetching commits...")
-        commits = fetch_commits(repo_name)
-
-        enriched_commits = []
-
-        for c in commits[:50]:
-            details = fetch_commit_details(repo_name, c["sha"])
-
-            if details:
-                c["details"] = details
-
-            enriched_commits.append(c)
-
-        print("Saving commits...")
-        commit_map = save_commits(enriched_commits, repo_id)
-
-        print("Saving commit files...")
-        save_commit_files(enriched_commits, commit_map)
-
         print("Fetching PRs...")
         prs = fetch_prs(repo_name)
         save_prs(prs, repo_id)
@@ -64,17 +48,63 @@ def process_repository(repo_url: str):
         issues = fetch_issues(repo_name)
         save_issues(issues, repo_id)
 
-        print("Computing expertise...")
+        print("Computing lightweight expertise...")
+        compute_lightweight_expertise()
+
+        print("Selecting active contributors for deep analysis...")
+
+        db = SessionLocal()
+
+        active_contributors = db.query(Contributor).filter(
+            Contributor.contributions_count > 3
+        ).all()
+
+        active_contributors = [
+            c for c in active_contributors
+            if c.username and "bot" not in c.username.lower()
+        ]
+
+        db.close()
+
+        print(f"Active contributors selected: {len(active_contributors)}")
+
+        deep_commit_details = []
+
+        for contributor in active_contributors:
+            print(f"Fetching commits for {contributor.username}...")
+
+            contributor_commits = fetch_contributor_commits(
+                repo_name,
+                contributor.username
+            )
+
+            if not contributor_commits:
+                continue
+
+            sampled_commits = contributor_commits[:2]
+
+            for commit in sampled_commits:
+                details = fetch_commit_details(
+                    repo_name,
+                    commit["sha"]
+                )
+
+                if details:
+                    deep_commit_details.append(details)
+
+        print(f"Deep commit samples collected: {len(deep_commit_details)}")
+
+        commit_map = save_commits(deep_commit_details, repo_id)
+        save_commit_files(deep_commit_details, commit_map)
+        
+        print("Computing deep expertise...")
         compute_expertise()
 
         print("========== PROCESS COMPLETE ==========")
 
     except Exception as e:
-
         print("\n========== PROCESS FAILED ==========")
-        print("ERROR IN PROCESS_REPOSITORY:")
         print(str(e))
-        print("====================================\n")
 
         return {
             "status": "failed",
