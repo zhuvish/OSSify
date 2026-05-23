@@ -26,7 +26,7 @@ class DocumentBuilder:
 
     @staticmethod
     def _make_id(prefix: str, source_id: Any) -> str:
-        return str(uuid.uuid4())
+        return f"{prefix}_{source_id}"
 
     @staticmethod
     def _normalize_timestamp(ts):
