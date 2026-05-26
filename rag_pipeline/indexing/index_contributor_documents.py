@@ -92,8 +92,10 @@ def fetch_all_documents(engine) -> Iterator[Dict[str, Any]]:
             c.author_email,
             c.date,
 
+            c.repo_id,
             r.full_name AS repo,
 
+            c.contributor_id AS contributor_db_id,
             ctr.username AS contributor,
             ctr.github_id AS contributor_id
 
@@ -116,8 +118,10 @@ def fetch_all_documents(engine) -> Iterator[Dict[str, Any]]:
             pr.created_at,
             pr.closed_at,
 
+            pr.repo_id,
             r.full_name AS repo,
 
+            pr.user_id AS contributor_db_id,
             ctr.username AS contributor,
             ctr.github_id AS contributor_id
 
@@ -140,6 +144,7 @@ def fetch_all_documents(engine) -> Iterator[Dict[str, Any]]:
             i.created_at,
             i.closed_at,
 
+            i.repo_id,
             r.full_name AS repo
 
         FROM issues i

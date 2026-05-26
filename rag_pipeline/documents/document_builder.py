@@ -7,8 +7,16 @@ import uuid
 
 
 class DocumentMetadata(BaseModel):
+    # preserve DB numeric ids for backwards compatibility
     repo_id: Optional[int] = None
-    contributor_id: Optional[int] = None
+    contributor_db_id: Optional[int] = None
+
+    # human-friendly fields for Qdrant payloads
+    repo: Optional[str] = None
+    contributor: Optional[str] = None
+    # contributor_id is the GitHub account id (string or int as provided by GitHub)
+    contributor_id: Optional[str] = None
+
     document_type: str
     timestamp: Optional[datetime] = None
     commit_sha: Optional[str] = None
@@ -26,7 +34,7 @@ class DocumentBuilder:
 
     @staticmethod
     def _make_id(prefix: str, source_id: Any) -> str:
-        return f"{prefix}_{source_id}"
+        return str(uuid.uuid5(uuid.NAMESPACE_DNS, f"{prefix}:{source_id}"))
 
     @staticmethod
     def _normalize_timestamp(ts):
@@ -44,9 +52,13 @@ class DocumentBuilder:
     @classmethod
     def from_commit_row(cls, row: Dict[str, Any]):
 
+        # row is expected to contain: repo (full_name), contributor (username), contributor_id (github id)
         metadata = DocumentMetadata(
             repo_id=row.get("repo_id"),
-            contributor_id=row.get("contributor_id"),
+            contributor_db_id=row.get("contributor_db_id"),
+            repo=row.get("repo"),
+            contributor=row.get("contributor"),
+            contributor_id=str(row.get("contributor_id")) if row.get("contributor_id") is not None else None,
             document_type="commit",
             timestamp=cls._normalize_timestamp(row.get("date")),
             commit_sha=row.get("sha"),
@@ -70,7 +82,10 @@ class DocumentBuilder:
 
         metadata = DocumentMetadata(
             repo_id=row.get("repo_id"),
-            contributor_id=row.get("user_id"),
+            contributor_db_id=row.get("contributor_db_id"),
+            repo=row.get("repo"),
+            contributor=row.get("contributor"),
+            contributor_id=str(row.get("contributor_id")) if row.get("contributor_id") is not None else None,
             document_type="pr",
             timestamp=cls._normalize_timestamp(row.get("created_at")),
             pr_number=row.get("pr_number"),
@@ -97,6 +112,7 @@ class DocumentBuilder:
 
         metadata = DocumentMetadata(
             repo_id=row.get("repo_id"),
+            repo=row.get("repo"),
             document_type="issue",
             timestamp=cls._normalize_timestamp(row.get("created_at")),
             issue_number=row.get("issue_number"),
