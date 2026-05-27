@@ -64,7 +64,17 @@ class DocumentBuilder:
             commit_sha=row.get("sha"),
         )
 
-        content = row.get("message") or ""
+        message = row.get("message") or ""
+        repo = row.get("repo") or ""
+        contributor = row.get("contributor") or ""
+        changed_files = row.get("changed_files") or ""
+
+        content = f"""
+            Commit message: {message}
+            Repository: {repo}
+            Contributor: {contributor}
+            Changed files: {changed_files}
+        """.strip()
 
         doc_id = cls._make_id(
             "commit",
@@ -113,6 +123,7 @@ class DocumentBuilder:
         metadata = DocumentMetadata(
             repo_id=row.get("repo_id"),
             repo=row.get("repo"),
+            contributor_id=row.get("contributor_id"),
             document_type="issue",
             timestamp=cls._normalize_timestamp(row.get("created_at")),
             issue_number=row.get("issue_number"),

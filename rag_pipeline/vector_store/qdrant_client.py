@@ -96,21 +96,25 @@ class QdrantVectorStore:
         """Perform semantic search returning point id, score, and payload.
         """
         try:
-            results = self._client.search(
+            results = self._client.query_points(
                 collection_name=self.collection,
-                query_vector=query_vector,
+                query=query_vector,
                 limit=top_k,
                 query_filter=filter,
                 with_payload=with_payload,
-                with_vector=False,
             )
         except Exception as exc:
             logger.exception("Qdrant search failed: %s", exc)
             return []
 
         out = []
-        for r in results:
-            out.append({"id": r.id, "score": r.score, "payload": r.payload})
+        for p in results.points:
+            out.append({
+                "id": p.id, 
+                "score": p.score, 
+                "payload": p.payload,
+                "content": p.payload.get("content", "")
+            })
         return out
 
     def build_filter_for_contributor(self, contributor_login: str) -> q_models.Filter:
