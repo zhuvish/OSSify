@@ -26,7 +26,7 @@ class DocumentBuilder:
 
     @staticmethod
     def _make_id(prefix: str, source_id: Any) -> str:
-        return f"{prefix}_{source_id}"
+        return str(uuid.uuid4())
 
     @staticmethod
     def _normalize_timestamp(ts):
@@ -52,7 +52,17 @@ class DocumentBuilder:
             commit_sha=row.get("sha"),
         )
 
-        content = row.get("message") or ""
+        message = row.get("message") or ""
+        repo = row.get("repo") or ""
+        contributor = row.get("contributor") or ""
+        changed_files = row.get("changed_files") or ""
+
+        content = f"""
+            Commit message: {message}
+            Repository: {repo}
+            Contributor: {contributor}
+            Changed files: {changed_files}
+        """.strip()
 
         doc_id = cls._make_id(
             "commit",
@@ -70,7 +80,7 @@ class DocumentBuilder:
 
         metadata = DocumentMetadata(
             repo_id=row.get("repo_id"),
-            contributor_id=row.get("user_id"),
+            contributor_id=row.get("contributor_id"),
             document_type="pr",
             timestamp=cls._normalize_timestamp(row.get("created_at")),
             pr_number=row.get("pr_number"),
@@ -97,6 +107,7 @@ class DocumentBuilder:
 
         metadata = DocumentMetadata(
             repo_id=row.get("repo_id"),
+            contributor_id=row.get("contributor_id"),
             document_type="issue",
             timestamp=cls._normalize_timestamp(row.get("created_at")),
             issue_number=row.get("issue_number"),
