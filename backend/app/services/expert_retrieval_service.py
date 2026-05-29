@@ -8,6 +8,7 @@ from __future__ import annotations
 import logging
 import math
 import os
+import re
 from collections import defaultdict
 from typing import Any, Dict, List, Optional
 
@@ -33,19 +34,22 @@ def find_experts(query: str, top_k: int = 5) -> List[Dict[str, Any]]:
     """Find experts for a given query by aggregating semantically relevant documents.
 
     Pipeline:
-      1. Semantic search across all Qdrant documents (top_k=50 raw)
+      1. Semantic search across all Qdrant documents (top_k=100 raw for better recall)
       2. Aggregate scores per contributor with document-type weighting
-      3. Enrich from PostgreSQL: expertise areas, matched files, stats
-      4. Rank and return top-k experts
+      3. Apply content-token matching bonus for documents whose content contains query terms
+      4. Enrich from PostgreSQL: expertise areas, matched files, stats
+      5. Rank and return top-k experts
 
     Scoring weights:
       - commit:  1.5
       - pr:      1.2
       - issue:   0.8
+      + content keyword match bonus: 0.3 per matched keyword occurrence
       + file-path token match bonus: 0.5 per matched file (max 2.0)
     """
     retriever = Retriever()
-    results = retriever.search(query, top_k=50)
+    # Increase raw recall for better expert discovery
+    results = retriever.search(query, top_k=100)
     db = SessionLocal()
 
     try:
@@ -53,9 +57,15 @@ def find_experts(query: str, top_k: int = 5) -> List[Dict[str, Any]]:
         contrib_scores: Dict[int, float] = defaultdict(float)
         contrib_evidence: Dict[int, List[Dict]] = defaultdict(list)
         contrib_file_tokens: Dict[int, set] = defaultdict(set)
+        contrib_doc_types: Dict[int, Dict[str, int]] = defaultdict(lambda: defaultdict(int))
 
         weights = {"commit": 1.5, "pr": 1.2, "issue": 0.8}
-        query_tokens = set(query.lower().split())
+        # Extract meaningful tokens from query - split on non-alphanumeric and filter short words
+        query_tokens = set()
+        for raw_token in re.split(r'[^a-zA-Z0-9_#.]+', query.lower()):
+            token = raw_token.strip()
+            if len(token) > 2:  # ignore very short tokens
+                query_tokens.add(token)
 
         for r in results:
             payload = r.get("payload", {})
@@ -65,23 +75,44 @@ def find_experts(query: str, top_k: int = 5) -> List[Dict[str, Any]]:
 
             doc_type = payload.get("document_type", "")
             score = r.get("score", 0.0) * weights.get(doc_type, 1.0)
+            content = (payload.get("content") or r.get("content") or "").lower()
 
-            # file-path token bonus from changed_files payload if available
+            # ── Content keyword match bonus ──
+            # Count how many query tokens appear in the document content
+            keyword_matches = 0
+            for token in query_tokens:
+                if token in content:
+                    keyword_matches += 1
+            content_bonus = min(keyword_matches * 0.3, 1.5)
+            score += content_bonus
+
+            # ── File-path token bonus from changed_files payload ──
             changed_files = (payload.get("changed_files") or "")
             for fname in changed_files.split(","):
                 fname = fname.strip().lower()
                 if not fname:
                     continue
-                if query_tokens & set(fname.replace("/", " ").replace("_", " ").replace("-", " ").split()):
+                # Check if any query token matches parts of the filename
+                fname_parts = set(re.split(r'[/_\-\.]', fname))
+                if query_tokens & fname_parts:
                     contrib_file_tokens[cid].add(fname)
+
+            # ── Track document types for diversity bonus ──
+            contrib_doc_types[cid][doc_type] += 1
 
             contrib_scores[cid] += score
             contrib_evidence[cid].append(r)
 
-        # add file-path bonus (cap at 2.0)
+        # ── File-path bonus (cap at 2.0) ──
         for cid in contrib_scores:
             bonus = min(len(contrib_file_tokens.get(cid, set())) * 0.5, 2.0)
             contrib_scores[cid] += bonus
+
+        # ── Diversity bonus: contributors with multiple document types get a boost ──
+        for cid in contrib_scores:
+            type_count = len(contrib_doc_types.get(cid, {}))
+            if type_count >= 2:
+                contrib_scores[cid] *= (1.0 + (type_count - 1) * 0.1)
 
         # ── rank ──
         ranked = sorted(contrib_scores.items(), key=lambda kv: kv[1], reverse=True)
@@ -114,8 +145,9 @@ def find_experts(query: str, top_k: int = 5) -> List[Dict[str, Any]]:
             # evidence count = unique matched documents
             evidence_count = len(contrib_evidence[contributor_id])
 
-            # confidence: normalized score capped at 0.95
-            confidence = round(min(score / 5.0, 0.95), 2)
+            # confidence: normalized against a softer scale, cap at 0.95
+            # With the improved scoring, scores will be higher, so scale accordingly
+            confidence = round(min(score / 8.0, 0.95), 2)
 
             output.append({
                 "contributor_id": contributor.id,
@@ -371,7 +403,21 @@ def answer_for_contributor(
         context_blocks = []
         for i, doc in enumerate(results, 1):
             payload = doc.get("payload", {})
-            snippet = (payload.get("content") or "")[:400]
+            # Use the content that was already resolved by QdrantVectorStore with fallback
+            snippet = (doc.get("content") or payload.get("content") or "")[:400]
+            if not snippet.strip():
+                # Last resort fallback: build from payload fields
+                parts = []
+                doc_type = payload.get("document_type", "")
+                if doc_type == "commit":
+                    parts.append(f"Commit: {payload.get('commit_message', '') or payload.get('message', '')}")
+                elif doc_type == "pr":
+                    parts.append(f"PR: {payload.get('title', '')}")
+                elif doc_type == "issue":
+                    parts.append(f"Issue: {payload.get('title', '')}")
+                parts.append(f"Repository: {payload.get('repo', '')}")
+                snippet = " | ".join(p for p in parts if p)[:400] or "(no content available)"
+
             context_blocks.append(
                 f"[Document {i}] Type: {payload.get('document_type')} | "
                 f"Score: {doc.get('score', 0):.4f}\n{snippet}"
