@@ -116,13 +116,12 @@ def fetch_all_documents(engine) -> Iterator[Dict[str, Any]]:
             i.created_at,
             i.closed_at,
             i.repo_id,
-            ctr.id AS contributor_id,
-            ctr.username AS contributor
+            r.full_name AS repo
 
         FROM issues i
 
-        LEFT JOIN contributors ctr
-            ON i.user_id = ctr.id
+        LEFT JOIN repositories r
+            ON i.repo_id = r.id
     """
 }
     for doc_type, q in queries.items():
