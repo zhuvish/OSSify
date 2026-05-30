@@ -109,11 +109,45 @@ class QdrantVectorStore:
 
         out = []
         for p in results.points:
+            payload = p.payload or {}
+            # Extract content with fallback: try "content" key, then build from payload fields
+            content = payload.get("content", "")
+            if not content or not content.strip():
+                # Build a meaningful snippet from other payload fields
+                parts = []
+                if payload.get("document_type") == "commit":
+                    msg = payload.get("commit_message", "") or payload.get("message", "")
+                    if msg:
+                        parts.append(f"Commit: {msg}")
+                elif payload.get("document_type") == "pr":
+                    title = payload.get("title", "")
+                    body = payload.get("body", "")
+                    if title:
+                        parts.append(f"PR: {title}")
+                    if body and len(body) > 10:
+                        parts.append(body[:500])
+                elif payload.get("document_type") == "issue":
+                    title = payload.get("title", "")
+                    body = payload.get("body", "")
+                    if title:
+                        parts.append(f"Issue: {title}")
+                    if body and len(body) > 10:
+                        parts.append(body[:500])
+                repo = payload.get("repo", "")
+                contributor = payload.get("contributor", "")
+                changed_files = payload.get("changed_files", "")
+                if repo:
+                    parts.append(f"Repository: {repo}")
+                if contributor:
+                    parts.append(f"Contributor: {contributor}")
+                if changed_files:
+                    parts.append(f"Changed files: {changed_files}")
+                content = " | ".join(parts) if parts else "(no content available)"
             out.append({
                 "id": p.id, 
                 "score": p.score, 
-                "payload": p.payload,
-                "content": p.payload.get("content", "")
+                "payload": payload,
+                "content": content
             })
         return out
 

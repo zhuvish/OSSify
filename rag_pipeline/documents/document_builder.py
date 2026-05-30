@@ -88,8 +88,17 @@ class DocumentBuilder:
 
         title = row.get("title") or ""
         body = row.get("body") or ""
+        repo = row.get("repo") or ""
+        contributor = row.get("contributor") or ""
 
-        content = f"{title}\n\n{body}".strip()
+        content = f"""
+            Pull Request: {title}
+
+            Description: {body}
+
+            Repository: {repo}
+            Contributor: {contributor}
+        """.strip()
 
         doc_id = cls._make_id(
             "pr",
@@ -115,8 +124,17 @@ class DocumentBuilder:
 
         title = row.get("title") or ""
         body = row.get("body") or ""
+        repo = row.get("repo") or ""
+        contributor = row.get("contributor") or ""
 
-        content = f"{title}\n\n{body}".strip()
+        content = f"""
+            Issue: {title}
+
+            Description: {body}
+
+            Repository: {repo}
+            Contributor: {contributor}
+        """.strip()
 
         doc_id = cls._make_id(
             "issue",

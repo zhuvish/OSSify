@@ -97,10 +97,16 @@ def fetch_all_documents(engine) -> Iterator[Dict[str, Any]]:
             pr.created_at,
             pr.closed_at,
             pr.repo_id,
+
+            r.full_name AS repo,
+
             ctr.id AS contributor_id,
             ctr.username AS contributor
 
         FROM pull_requests pr
+
+        LEFT JOIN repositories r
+            ON pr.repo_id = r.id
 
         LEFT JOIN contributors ctr
             ON pr.user_id = ctr.id
@@ -116,10 +122,16 @@ def fetch_all_documents(engine) -> Iterator[Dict[str, Any]]:
             i.created_at,
             i.closed_at,
             i.repo_id,
+
+            r.full_name AS repo,
+
             ctr.id AS contributor_id,
             ctr.username AS contributor
 
         FROM issues i
+
+        LEFT JOIN repositories r
+            ON i.repo_id = r.id
 
         LEFT JOIN contributors ctr
             ON i.user_id = ctr.id
@@ -184,8 +196,15 @@ def index_documents(database_url: str, qdrant_collection: str = "repo_documents"
 
         if len(contents) >= BATCH_EMBED_SIZE:
             vectors = embedder.embed_texts(contents, batch_size=BATCH_EMBED_SIZE)
-            for _id, vec, payload in zip(ids, vectors, metadatas):
-                batch_points.append({"id": _id, "vector": vec, "payload": payload})
+            for _id, vec, payload, content in zip(ids, vectors, metadatas, contents):
+                batch_points.append({
+                    "id": _id,
+                    "vector": vec,
+                    "payload": {
+                        **payload,
+                        "content": content
+                    }
+                })
             qds.upsert_points(batch_points)
             batch_points = []
             contents = []
@@ -217,4 +236,3 @@ if __name__ == "__main__":
     if not DATABASE_URL:
         raise SystemExit("DATABASE_URL env var is required")
     index_documents(DATABASE_URL)
-
