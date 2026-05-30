@@ -200,88 +200,207 @@ def save_commit_files(commits_data, commit_map):
         db.close()
 
 
+# def save_prs(prs_data, repo_id):
+#     db = SessionLocal()
+
+#     for pr in prs_data:
+#         existing = db.query(PullRequest).filter_by(
+#             repo_id=repo_id,
+#             pr_number=pr["number"]
+#         ).first()
+
+#         if existing:
+#             continue
+
+#         contributor = None
+
+#         if pr.get("user"):
+#             contributor = db.query(Contributor).filter_by(
+#                 username=pr["user"]["login"]
+#             ).first()
+
+#         pr_obj = PullRequest(
+#             pr_number=pr["number"],
+#             title=pr.get("title"),
+#             body=pr.get("body"),
+#             state=pr.get("state"),
+#             created_at=parse_datetime(pr.get("created_at")),
+#             closed_at=parse_datetime(pr.get("closed_at")),
+#             merged=pr.get("merged"),
+#             merged_at=parse_datetime(pr.get("merged_at")),
+#             comments_count=pr.get("comments"),
+#             review_comments_count=pr.get("review_comments"),
+#             author_login=pr["user"]["login"] if pr.get("user") else None,
+#             user_id=contributor.id if contributor else None,
+#             repo_id=repo_id
+#         )
+
+#         db.add(pr_obj)
+
+#     db.commit()
+#     db.close()
+
 def save_prs(prs_data, repo_id):
     db = SessionLocal()
 
-    for pr in prs_data:
-        existing = db.query(PullRequest).filter_by(
-            repo_id=repo_id,
-            pr_number=pr["number"]
-        ).first()
-
-        if existing:
-            continue
-
-        contributor = None
-
-        if pr.get("user"):
-            contributor = db.query(Contributor).filter_by(
-                username=pr["user"]["login"]
+    try:
+        for pr in prs_data:
+            existing = db.query(PullRequest).filter_by(
+                repo_id=repo_id,
+                pr_number=pr["number"]
             ).first()
 
-        pr_obj = PullRequest(
-            pr_number=pr["number"],
-            title=pr.get("title"),
-            body=pr.get("body"),
-            state=pr.get("state"),
-            created_at=parse_datetime(pr.get("created_at")),
-            closed_at=parse_datetime(pr.get("closed_at")),
-            merged=pr.get("merged"),
-            merged_at=parse_datetime(pr.get("merged_at")),
-            comments_count=pr.get("comments"),
-            review_comments_count=pr.get("review_comments"),
-            author_login=pr["user"]["login"] if pr.get("user") else None,
-            user_id=contributor.id if contributor else None,
-            repo_id=repo_id
-        )
+            if existing:
+                continue
 
-        db.add(pr_obj)
+            contributor = None
 
-    db.commit()
-    db.close()
+            if pr.get("user"):
+                username = pr["user"]["login"]
 
+                contributor = db.query(Contributor).filter_by(
+                    username=username
+                ).first()
+
+                # Create contributor if missing
+                if contributor is None:
+                    contributor = Contributor(
+                        github_id=pr["user"]["id"],
+                        username=username,
+                        profile_url=pr["user"].get("html_url"),
+                        avatar_url=pr["user"].get("avatar_url")
+                    )
+
+                    db.add(contributor)
+                    db.flush()
+
+            pr_obj = PullRequest(
+                pr_number=pr["number"],
+                title=pr.get("title"),
+                body=pr.get("body"),
+                state=pr.get("state"),
+                created_at=parse_datetime(pr.get("created_at")),
+                closed_at=parse_datetime(pr.get("closed_at")),
+                merged=pr.get("merged"),
+                merged_at=parse_datetime(pr.get("merged_at")),
+                comments_count=pr.get("comments"),
+                review_comments_count=pr.get("review_comments"),
+                author_login=pr["user"]["login"] if pr.get("user") else None,
+                user_id=contributor.id if contributor else None,
+                repo_id=repo_id
+            )
+
+            db.add(pr_obj)
+
+        db.commit()
+
+    finally:
+        db.close()
+
+
+# def save_issues(issues_data, repo_id):
+#     db = SessionLocal()
+
+#     for issue in issues_data:
+#         if "pull_request" in issue:
+#             continue
+
+#         existing = db.query(Issue).filter_by(
+#             repo_id=repo_id,
+#             issue_number=issue["number"]
+#         ).first()
+
+#         if existing:
+#             continue
+
+#         contributor = None
+
+#         if issue.get("user"):
+#             contributor = db.query(Contributor).filter_by(
+#                 username=issue["user"]["login"]
+#             ).first()
+
+#         labels = ",".join(
+#             [label["name"] for label in issue.get("labels", [])]
+#         )
+
+#         issue_obj = Issue(
+#             issue_number=issue["number"],
+#             title=issue.get("title"),
+#             body=issue.get("body"),
+#             state=issue.get("state"),
+#             created_at=parse_datetime(issue.get("created_at")),
+#             closed_at=parse_datetime(issue.get("closed_at")),
+#             labels=labels,
+#             comments_count=issue.get("comments"),
+#             author_login=issue["user"]["login"] if issue.get("user") else None,
+#             user_id=contributor.id if contributor else None,
+#             repo_id=repo_id
+#         )
+
+#         db.add(issue_obj)
+
+#     db.commit()
+#     db.close()
 
 def save_issues(issues_data, repo_id):
     db = SessionLocal()
 
-    for issue in issues_data:
-        if "pull_request" in issue:
-            continue
+    try:
+        for issue in issues_data:
+            if "pull_request" in issue:
+                continue
 
-        existing = db.query(Issue).filter_by(
-            repo_id=repo_id,
-            issue_number=issue["number"]
-        ).first()
-
-        if existing:
-            continue
-
-        contributor = None
-
-        if issue.get("user"):
-            contributor = db.query(Contributor).filter_by(
-                username=issue["user"]["login"]
+            existing = db.query(Issue).filter_by(
+                repo_id=repo_id,
+                issue_number=issue["number"]
             ).first()
 
-        labels = ",".join(
-            [label["name"] for label in issue.get("labels", [])]
-        )
+            if existing:
+                continue
 
-        issue_obj = Issue(
-            issue_number=issue["number"],
-            title=issue.get("title"),
-            body=issue.get("body"),
-            state=issue.get("state"),
-            created_at=parse_datetime(issue.get("created_at")),
-            closed_at=parse_datetime(issue.get("closed_at")),
-            labels=labels,
-            comments_count=issue.get("comments"),
-            author_login=issue["user"]["login"] if issue.get("user") else None,
-            user_id=contributor.id if contributor else None,
-            repo_id=repo_id
-        )
+            contributor = None
 
-        db.add(issue_obj)
+            if issue.get("user"):
+                username = issue["user"]["login"]
 
-    db.commit()
-    db.close()
+                contributor = db.query(Contributor).filter_by(
+                    username=username
+                ).first()
+
+                # Create contributor if missing
+                if contributor is None:
+                    contributor = Contributor(
+                        github_id=issue["user"]["id"],
+                        username=username,
+                        profile_url=issue["user"].get("html_url"),
+                        avatar_url=issue["user"].get("avatar_url")
+                    )
+
+                    db.add(contributor)
+                    db.flush()
+
+            labels = ",".join(
+                [label["name"] for label in issue.get("labels", [])]
+            )
+
+            issue_obj = Issue(
+                issue_number=issue["number"],
+                title=issue.get("title"),
+                body=issue.get("body"),
+                state=issue.get("state"),
+                created_at=parse_datetime(issue.get("created_at")),
+                closed_at=parse_datetime(issue.get("closed_at")),
+                labels=labels,
+                comments_count=issue.get("comments"),
+                author_login=issue["user"]["login"] if issue.get("user") else None,
+                user_id=contributor.id if contributor else None,
+                repo_id=repo_id
+            )
+
+            db.add(issue_obj)
+
+        db.commit()
+
+    finally:
+        db.close()
