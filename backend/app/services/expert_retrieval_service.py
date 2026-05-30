@@ -114,27 +114,88 @@ def find_experts(query: str, top_k: int = 5) -> List[Dict[str, Any]]:
             if type_count >= 2:
                 contrib_scores[cid] *= (1.0 + (type_count - 1) * 0.1)
 
-        # ── rank ──
+        # ── Domain-aware boosting: detect if query asks about a known domain and boost matching expertise ──
+        known_domains = {"backend", "frontend", "testing", "documentation", "devops", "database"}
+        query_lc = query.lower()
+        found_domains = {d for d in known_domains if d in query_lc}
+        if found_domains and contrib_scores:
+            # Only consider contributors we already scored to avoid scanning the whole DB
+            try:
+                matching_expertise = (
+                    db.query(ContributorExpertise)
+                    .filter(ContributorExpertise.contributor_id.in_(list(contrib_scores.keys())))
+                    .filter(ContributorExpertise.domain.in_(list(found_domains)))
+                    .all()
+                )
+                # Additive boost proportional to the contributor's expertise score for the domain
+                DOMAIN_BOOST_FACTOR = 0.05
+                for ex in matching_expertise:
+                    contrib_scores[ex.contributor_id] += ex.score * DOMAIN_BOOST_FACTOR
+            except Exception:
+                # Avoid failing the whole search if DB lookup misbehaves
+                logger.exception("Domain boosting failed")
+
+        # ── rank contributors by aggregated score ──
         ranked = sorted(contrib_scores.items(), key=lambda kv: kv[1], reverse=True)
 
-        # ── build output ──
+        # ── build output (skip bot accounts and include top evidence) ──
         output: List[Dict[str, Any]] = []
-        for contributor_id, score in ranked[:top_k]:
+        added = 0
+        for contributor_id, score in ranked:
+            if added >= top_k:
+                break
+
             contributor = db.query(Contributor).filter_by(id=contributor_id).first()
             if not contributor:
                 continue
 
-            # expertise areas
+            # Exclude bot accounts (username contains "bot", case-insensitive)
+            if contributor.username and "bot" in contributor.username.lower():
+                continue
+
+            # expertise areas: aggregate duplicate domains from ContributorExpertise
             expertise_rows = (
                 db.query(ContributorExpertise)
                 .filter_by(contributor_id=contributor_id)
-                .order_by(ContributorExpertise.score.desc())
                 .all()
             )
-            expertise_areas = [
-                {"domain": row.domain, "score": row.score}
-                for row in expertise_rows
-            ]
+            expertise_map: Dict[str, Dict[str, Any]] = {}
+            for row in expertise_rows:
+                dom = (row.domain or "").lower()
+                if not dom:
+                    continue
+                if dom not in expertise_map:
+                    expertise_map[dom] = {
+                        "domain": row.domain,
+                        "score": float(row.score or 0.0),
+                        "evidence_count": int(row.evidence_count or 0),
+                        "confidence": float(row.confidence or 0.0),
+                    }
+                else:
+                    # Aggregate scores and evidence counts; average confidence weighted by score
+                    expertise_map[dom]["score"] += float(row.score or 0.0)
+                    expertise_map[dom]["evidence_count"] += int(row.evidence_count or 0)
+                    # weighted avg confidence
+                    existing_conf = expertise_map[dom]["confidence"]
+                    new_conf = float(row.confidence or 0.0)
+                    total = expertise_map[dom]["score"]
+                    # avoid divide by zero
+                    if total > 0:
+                        expertise_map[dom]["confidence"] = (existing_conf + new_conf) / 2.0
+
+            expertise_areas = sorted(
+                [
+                    {
+                        "domain": v["domain"],
+                        "score": round(v["score"], 3),
+                        "evidence_count": v["evidence_count"],
+                        "confidence": round(min(v["confidence"], 0.99), 3),
+                    }
+                    for v in expertise_map.values()
+                ],
+                key=lambda x: x["score"],
+                reverse=True,
+            )
 
             # top expertise domain
             top_expertise = expertise_areas[0]["domain"] if expertise_areas else None
@@ -145,8 +206,20 @@ def find_experts(query: str, top_k: int = 5) -> List[Dict[str, Any]]:
             # evidence count = unique matched documents
             evidence_count = len(contrib_evidence[contributor_id])
 
+            # top evidence documents (up to 3), sorted by score
+            top_docs = sorted(contrib_evidence[contributor_id], key=lambda d: d.get("score", 0), reverse=True)[:3]
+            top_evidence = []
+            for d in top_docs:
+                payload = d.get("payload", {})
+                top_evidence.append({
+                    "document_type": payload.get("document_type"),
+                    "score": d.get("score", 0),
+                    "commit_sha": payload.get("commit_sha"),
+                    "pr_number": payload.get("pr_number"),
+                    "issue_number": payload.get("issue_number"),
+                })
+
             # confidence: normalized against a softer scale, cap at 0.95
-            # With the improved scoring, scores will be higher, so scale accordingly
             confidence = round(min(score / 8.0, 0.95), 2)
 
             output.append({
@@ -158,7 +231,10 @@ def find_experts(query: str, top_k: int = 5) -> List[Dict[str, Any]]:
                 "matched_documents": evidence_count,
                 "matched_files": matched_files,
                 "confidence": confidence,
+                "top_evidence": top_evidence,
             })
+
+            added += 1
 
         return output
 
@@ -185,19 +261,46 @@ def get_contributor_profile(contributor_id: int) -> Optional[Dict[str, Any]]:
         # ── expertise ──
         expertise_rows = (
             db.query(ContributorExpertise)
-            .filter_by(contributor_id=contributor_id)
-            .order_by(ContributorExpertise.score.desc())
+            .filter_by(
+                contributor_id=contributor_id,
+                source="deep"
+            )
             .all()
         )
-        expertise_areas = [
-            {
-                "domain": row.domain,
-                "score": row.score,
-                "evidence_count": row.evidence_count,
-                "confidence": row.confidence,
-            }
-            for row in expertise_rows
-        ]
+        # Aggregate duplicate domains (across sources) into single entries
+        expertise_map: Dict[str, Dict[str, Any]] = {}
+        for row in expertise_rows:
+            dom = (row.domain or "").lower()
+            if not dom:
+                continue
+            if dom not in expertise_map:
+                expertise_map[dom] = {
+                    "domain": row.domain,
+                    "score": float(row.score or 0.0),
+                    "evidence_count": int(row.evidence_count or 0),
+                    "confidence": float(row.confidence or 0.0),
+                }
+            else:
+                expertise_map[dom]["score"] += float(row.score or 0.0)
+                expertise_map[dom]["evidence_count"] += int(row.evidence_count or 0)
+                # simple average of confidences
+                expertise_map[dom]["confidence"] = (
+                    expertise_map[dom]["confidence"] + float(row.confidence or 0.0)
+                ) / 2.0
+
+        expertise_areas = sorted(
+            [
+                {
+                    "domain": v["domain"],
+                    "score": round(v["score"], 3),
+                    "evidence_count": v["evidence_count"],
+                    "confidence": round(min(v["confidence"], 0.99), 3),
+                }
+                for v in expertise_map.values()
+            ],
+            key=lambda x: x["score"],
+            reverse=True,
+        )
 
         # ── counts ──
         commit_count = db.query(Commit).filter_by(contributor_id=contributor_id).count()
