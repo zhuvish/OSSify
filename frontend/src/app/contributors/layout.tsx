@@ -1,0 +1,21 @@
+import Sidebar from "@/src/components/Sidebar";
+import AskAI from "@/src/components/AskAI";
+
+export default function ContributorsLayout({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
+  return (
+    <div className="flex">
+      <Sidebar />
+
+      <main className="flex-1 bg-slate-100">
+      <div className="max-w-7xl mx-auto p-8">
+        {children}
+      </div>
+      <AskAI />
+    </main>
+    </div>
+  );
+}
