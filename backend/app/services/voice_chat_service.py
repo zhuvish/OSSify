@@ -11,6 +11,7 @@ import os
 from typing import Any, Dict, BinaryIO
 
 from backend.app.services.expert_retrieval_service import answer_for_contributor
+from backend.app.services.tts_service import generate_speech, TTSException
 
 logger = logging.getLogger(__name__)
 
@@ -131,5 +132,25 @@ def voice_chat_with_contributor(
 
     # Step 3: Enrich response with transcript
     result["transcript"] = transcript
+
+    # Step 4: Generate TTS audio for the LLM answer and attach to response if possible.
+    try:
+        answer_text = result.get("answer", "")
+        if answer_text and answer_text.strip():
+            try:
+                audio_bytes = generate_speech(answer_text)
+                result["audio_mp3"] = audio_bytes
+            except (ValueError, TTSException) as e:
+                # Avoid breaking existing JSON endpoint if TTS is not configured or fails.
+                logger.warning("TTS generation skipped: %s", e)
+                result["audio_mp3"] = None
+            except Exception:
+                logger.exception("Unexpected error during TTS generation; skipping audio")
+                result["audio_mp3"] = None
+        else:
+            result["audio_mp3"] = None
+    except Exception:
+        logger.exception("Failed while attempting to generate or attach TTS")
+        result["audio_mp3"] = None
 
     return result
