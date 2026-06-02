@@ -1,3 +1,5 @@
+"use client";
+
 import { useEffect, useMemo, useState } from "react";
 import RepositoryCard from "@/src/components/RepositoryCard";
 import Sidebar from "@/src/components/Sidebar";
