@@ -138,3 +138,39 @@ def repository_status(repo_id: int):
 
     finally:
         db.close()
+
+
+@router.get("/repositories")
+def list_repositories():
+    db = SessionLocal()
+
+    try:
+        rows = db.execute(
+            text("""
+                SELECT
+                    r.id,
+                    r.full_name,
+                    r.url,
+                    COALESCE((SELECT COUNT(DISTINCT contributor_id) FROM commits WHERE repo_id = r.id), 0) AS contributors,
+                    COALESCE((SELECT COUNT(*) FROM commits WHERE repo_id = r.id), 0) AS commits,
+                    COALESCE((SELECT COUNT(*) FROM issues WHERE repo_id = r.id), 0) AS issues
+                FROM repositories r
+                ORDER BY r.id DESC
+            """)
+        ).fetchall()
+
+        result = []
+        for row in rows:
+            result.append({
+                "id": row.id,
+                "name": row.full_name,
+                "url": row.url,
+                "contributors": int(row.contributors),
+                "commits": int(row.commits),
+                "issues": int(row.issues)
+            })
+
+        return result
+
+    finally:
+        db.close()
