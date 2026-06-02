@@ -11,3 +11,15 @@ export async function getDashboardStats(repoId: number) {
 
   return response.json();
 }
+
+export async function getTopExperts(repoId: number) {
+  const res = await fetch(`${API_URL}/repositories/${repoId}/top-experts`);
+  if (!res.ok) throw new Error("Failed to load top experts");
+  return res.json();
+}
+
+export async function getRepoTopics(repoId: number) {
+  const res = await fetch(`${API_URL}/repositories/${repoId}/topics`);
+  if (!res.ok) throw new Error("Failed to load topics");
+  return res.json();
+}
