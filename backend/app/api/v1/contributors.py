@@ -40,14 +40,31 @@ def get_contributors(repo_id: int):
             {"repo_id": repo_id}
         ).fetchall()
 
-        return [
-            {
+        results = []
+
+        for row in rows:
+            # aggregate expertise score for contributor (global)
+            expertise_sum = db.execute(
+                text("SELECT COALESCE(SUM(score),0) FROM contributor_expertise WHERE contributor_id = :cid"),
+                {"cid": row.id}
+            ).scalar()
+
+            top_expertise_rows = db.execute(
+                text("SELECT domain FROM contributor_expertise WHERE contributor_id = :cid ORDER BY score DESC LIMIT 5"),
+                {"cid": row.id}
+            ).fetchall()
+
+            top_expertise = [r.domain for r in top_expertise_rows]
+
+            results.append({
                 "id": row.id,
                 "username": row.username,
-                "commit_count": row.commit_count
-            }
-            for row in rows
-        ]
+                "commit_count": int(row.contribution_count or 0),
+                "expertise_score": float(expertise_sum or 0.0),
+                "top_expertise": top_expertise
+            })
+
+        return results
 
     finally:
         db.close()
