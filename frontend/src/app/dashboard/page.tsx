@@ -198,10 +198,24 @@ export default function DashboardPage() {
               </button>
             </div>
 
-            <div className="h-[600px] rounded-xl border-2 border-dashed border-slate-200 flex items-center justify-center">
-              <p className="text-slate-400">
-                Interactive Graph Coming Soon
-              </p>
+            <div>
+              {/* Graph visualization */}
+              {typeof window !== 'undefined' && (
+                (() => {
+                  const repoId = Number(localStorage.getItem('selected_repo_id')) || null;
+                  if (!repoId) {
+                    return (
+                      <div className="h-[600px] rounded-xl border-2 border-dashed border-slate-200 flex items-center justify-center">
+                        <p className="text-slate-400">No repository selected</p>
+                      </div>
+                    );
+                  }
+
+                  // Lazy load GraphView
+                  const GraphView = require('@/src/components/GraphView').default;
+                  return <GraphView repoId={repoId} />;
+                })()
+              )}
             </div>
           </div>
         </div>

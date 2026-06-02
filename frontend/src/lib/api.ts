@@ -62,3 +62,14 @@ export async function getRepositories() {
     throw err;
   }
 }
+
+export async function getRepoGraph(repoId: number) {
+  try {
+    const response = await fetch(`${API_URL}/repositories/${repoId}/graph`);
+    if (!response.ok) throw new Error(`Backend returned ${response.status}`);
+    return response.json();
+  } catch (err) {
+    if (err instanceof TypeError) throw new Error("Cannot connect to backend server.");
+    throw err;
+  }
+}
