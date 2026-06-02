@@ -1,5 +1,4 @@
 import Sidebar from "@/src/components/Sidebar";
-import AskAI from "@/src/components/AskAI";
 
 export default function DashboardLayout({
   children,
@@ -14,7 +13,6 @@ export default function DashboardLayout({
       <div className="max-w-7xl mx-auto p-8">
         {children}
       </div>
-      <AskAI />      
     </main>
     </div>
   );
