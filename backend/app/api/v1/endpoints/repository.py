@@ -237,6 +237,18 @@ def top_experts(repo_id: int):
         db.close()
 
 
+@router.get("/repositories/{repo_id}/graph")
+def repo_graph(repo_id: int):
+    from backend.app.services.graph_service import GraphService
+
+    graph = GraphService()
+    try:
+        data = graph.get_graph_for_repo(repo_id)
+        return data
+    finally:
+        graph.close()
+
+
 @router.get("/repositories/{repo_id}/topics")
 def repo_topics(repo_id: int):
     db = SessionLocal()
