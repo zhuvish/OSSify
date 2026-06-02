@@ -5,6 +5,8 @@ from sqlalchemy import text
 from backend.app.db.postgres import SessionLocal
 from backend.app.services.repo_service import process_repository
 from data_pipeline.utils.repo_parser import parse_github_url
+from backend.app.models.repository import Repository
+import threading
 
 router = APIRouter()
 
@@ -43,16 +45,23 @@ def analyze_repo(request: RepoRequest):
                 "cached": True
             }
 
-    finally:
-        db.close()
+        # If not exists, create placeholder repository row with processing status
+        insert = db.execute(
+            text("""
+                INSERT INTO repositories (name, owner, full_name, url, status)
+                VALUES (:name, :owner, :full_name, :url, :status)
+            """),
+            {
+                "name": repo_name.split('/')[-1],
+                "owner": repo_name.split('/')[0],
+                "full_name": repo_name,
+                "url": repo_url,
+                "status": "processing"
+            }
+        )
+        db.commit()
 
-    # Repository not found → process it
-    process_repository(repo_url)
-
-    db = SessionLocal()
-
-    try:
-        repository = db.execute(
+        created = db.execute(
             text("""
                 SELECT id, full_name
                 FROM repositories
@@ -62,19 +71,70 @@ def analyze_repo(request: RepoRequest):
             {"repo_name": repo_name}
         ).first()
 
-        if not repository:
-            return {
-                "status": "error",
-                "message": "Repository not found after ingestion"
-            }
+        repo_id = created.id if created else None
 
-        return {
-            "status": "success",
-            "repo_id": repository.id,
-            "repo_name": repository.full_name,
-            "repo_url": repo_url,
-            "cached": False
-        }
+    finally:
+        db.close()
+
+    # Start background thread to process repository
+    def _background():
+        try:
+            process_repository(repo_url)
+            # mark repository as ready
+            db2 = SessionLocal()
+            try:
+                repo = db2.query(Repository).filter_by(full_name=repo_name).first()
+                if repo:
+                    repo.status = "ready"
+                    db2.add(repo)
+                    db2.commit()
+            finally:
+                db2.close()
+        except Exception as e:
+            db3 = SessionLocal()
+            try:
+                repo = db3.query(Repository).filter_by(full_name=repo_name).first()
+                if repo:
+                    repo.status = "failed"
+                    db3.add(repo)
+                    db3.commit()
+            finally:
+                db3.close()
+
+    thread = threading.Thread(target=_background, daemon=True)
+    thread.start()
+
+    return {
+        "status": "processing",
+        "repo_id": repo_id,
+        "repo_name": repo_name,
+        "repo_url": repo_url,
+        "cached": False
+    }
+
+
+@router.get("/repositories/{repo_id}/status")
+def repository_status(repo_id: int):
+    db = SessionLocal()
+
+    try:
+        row = db.execute(
+            text("""
+                SELECT id, full_name, status
+                FROM repositories
+                WHERE id = :repo_id
+                LIMIT 1
+            """),
+            {"repo_id": repo_id}
+        ).first()
+
+        if not row:
+            return {"status": "not_found"}
+
+        # Normalize status
+        status = row.status or "ready"
+
+        return {"status": status}
 
     finally:
         db.close()

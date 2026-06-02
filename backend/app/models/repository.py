@@ -19,6 +19,9 @@ class Repository(Base):
     default_branch = Column(String)
     github_created_at = Column(DateTime)
     github_updated_at = Column(DateTime)
+    # processing status: 'processing' | 'ready' | 'failed'
+    status = Column(String, nullable=True)
+
     commits = relationship("Commit", back_populates="repository", cascade="all, delete-orphan")
     pull_requests = relationship("PullRequest", back_populates="repository", cascade="all, delete-orphan")
     issues = relationship("Issue", back_populates="repository", cascade="all, delete-orphan")
