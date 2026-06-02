@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
-import { getContributors } from "@/src/lib/contributors";
+import { getContributors, searchContributors } from "@/src/lib/contributors";
 
 type SortBy = "expertise" | "contributions" | "name";
 
