@@ -8,10 +8,12 @@ type SortBy = "expertise" | "contributions" | "name";
 
 export default function ContributorsPage() {
   const [contributors, setContributors] = useState<any[]>([]);
+  const [initialContributors, setInitialContributors] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [query, setQuery] = useState("");
   const [sortBy, setSortBy] = useState<SortBy>("contributions");
   const [topicFilter, setTopicFilter] = useState<string | null>(null);
+  const router = useRouter();
 
   useEffect(() => {
     let mounted = true;
@@ -28,6 +30,7 @@ export default function ContributorsPage() {
         const data = await getContributors(Number(repoId));
         if (!mounted) return;
         setContributors(data || []);
+        setInitialContributors(data || []);
       } catch (e) {
         setContributors([]);
       } finally {
@@ -38,6 +41,28 @@ export default function ContributorsPage() {
     load();
     return () => { mounted = false; };
   }, []);
+
+  useEffect(() => {
+    // Debounced server-side search when query length >= 2
+    if (query.length >= 2) {
+      const t = setTimeout(async () => {
+        setLoading(true);
+        try {
+          const results = await searchContributors(query);
+          setContributors(results || []);
+        } catch (e) {
+          setContributors([]);
+        } finally {
+          setLoading(false);
+        }
+      }, 350);
+
+      return () => clearTimeout(t);
+    } else {
+      // restore initial list when query cleared
+      setContributors(initialContributors);
+    }
+  }, [query]);
 
   const topics = useMemo(() => {
     const set = new Set<string>();
@@ -78,11 +103,10 @@ export default function ContributorsPage() {
         </div>
 
         <div className="flex items-center gap-3">
-          <input
+          <ContributorSearch
             value={query}
-            onChange={(e) => setQuery(e.target.value)}
-            placeholder="Search contributors..."
-            className="w-80 rounded-xl border border-slate-300 bg-white px-4 py-3 outline-none"
+            onChange={(v) => setQuery(v)}
+            onSelect={(item) => router.push(`/contributors/${item.id}`)}
           />
 
           <select value={sortBy} onChange={(e) => setSortBy(e.target.value as SortBy)} className="rounded-xl border px-3 py-2 bg-white">
