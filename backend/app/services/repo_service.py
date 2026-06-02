@@ -105,8 +105,5 @@ def process_repository(repo_url: str):
     except Exception as e:
         print("\n========== PROCESS FAILED ==========")
         print(str(e))
-
-        return {
-            "status": "failed",
-            "error": str(e)
-        }
+        # Re-raise so callers (background wrapper) can detect failure and mark status appropriately
+        raise

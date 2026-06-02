@@ -1,7 +1,10 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import dynamic from 'next/dynamic';
 import { getDashboardStats } from "@/src/lib/dashboard";
+
+const GraphView = dynamic(() => import('@/src/components/GraphView'), { ssr: false });
 
 export default function DashboardPage() {
   const [stats, setStats] = useState({
@@ -149,37 +152,7 @@ export default function DashboardPage() {
             </h2>
 
             <div className="space-y-5">
-
-              <div>
-                <p className="font-medium text-slate-900">
-                  Fixed authentication bug
-                </p>
-
-                <p className="text-sm text-slate-500">
-                  davidism • 2 hours ago
-                </p>
-              </div>
-
-              <div>
-                <p className="font-medium text-slate-900">
-                  Added session middleware
-                </p>
-
-                <p className="text-sm text-slate-500">
-                  pgjones • 5 hours ago
-                </p>
-              </div>
-
-              <div>
-                <p className="font-medium text-slate-900">
-                  Refactored routing logic
-                </p>
-
-                <p className="text-sm text-slate-500">
-                  justquick • yesterday
-                </p>
-              </div>
-
+              <div className="text-sm text-slate-500">Repository activity will appear here after ingestion is complete.</div>
             </div>
           </div>
         </div>
@@ -211,8 +184,7 @@ export default function DashboardPage() {
                     );
                   }
 
-                  // Lazy load GraphView
-                  const GraphView = require('@/src/components/GraphView').default;
+                  // Lazy loaded client-only GraphView
                   return <GraphView repoId={repoId} />;
                 })()
               )}

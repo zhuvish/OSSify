@@ -83,7 +83,20 @@ def analyze_repo(request: RepoRequest):
     # Start background thread to process repository
     def _background():
         try:
-            process_repository(repo_url)
+            result = process_repository(repo_url)
+            # If process_repository returns an error dict, mark failed
+            if isinstance(result, dict) and result.get("status") == "failed":
+                db3 = SessionLocal()
+                try:
+                    repo = db3.query(Repository).filter_by(full_name=repo_name).first()
+                    if repo:
+                        repo.status = "failed"
+                        db3.add(repo)
+                        db3.commit()
+                finally:
+                    db3.close()
+                return
+
             # mark repository as ready
             db2 = SessionLocal()
             try:

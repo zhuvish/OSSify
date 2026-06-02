@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { getContributors, searchContributors } from "@/src/lib/contributors";
+import ContributorSearch from "@/src/components/ContributorSearch";
 
 type SortBy = "expertise" | "contributions" | "name";
 

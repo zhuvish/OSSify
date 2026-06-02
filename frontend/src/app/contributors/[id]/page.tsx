@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { getContributor } from "@/src/lib/contributors";
 import GraphView from "@/src/components/GraphView";
+import DigitalTwinCard from "@/src/components/DigitalTwinCard";
 
 export default function ContributorProfile({ params }: { params: { id: string } }) {
   const [profile, setProfile] = useState<any | null>(null);

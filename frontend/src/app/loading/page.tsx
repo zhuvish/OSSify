@@ -37,7 +37,7 @@ export default function LoadingPage() {
 
         setStatus(res.status);
 
-        if (res.status === "ready") {
+        if (res.status === "ready" || res.status === "completed") {
           router.push("/dashboard");
         }
 
