@@ -83,7 +83,7 @@ export default function DashboardPage() {
             </span>
 
             <span className="bg-black/40 text-white px-4 py-1 rounded-2xl text-sm">
-              {stats.last_updated ? new Date(stats.last_updated).toLocaleDateString() : new Date().toLocaleDateString()}
+              {stats.last_updated ? new Date(stats.last_updated).toISOString().split("T")[0] : ""}
             </span>
           </div>
         </div>
