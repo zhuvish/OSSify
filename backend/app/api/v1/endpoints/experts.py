@@ -8,7 +8,9 @@ from __future__ import annotations
 import logging
 from typing import Any, Dict, List, Optional
 
-from fastapi import APIRouter, HTTPException, Query, Body
+from fastapi import APIRouter, HTTPException, Query, Body, UploadFile, File
+from fastapi.responses import StreamingResponse
+import io
 from pydantic import BaseModel, Field
 
 from backend.app.services.expert_retrieval_service import (
@@ -16,6 +18,8 @@ from backend.app.services.expert_retrieval_service import (
     get_contributor_profile,
     answer_for_contributor,
 )
+from backend.app.services.voice_chat_service import voice_chat_with_contributor
+from backend.app.services.tts_service import generate_speech, TTSException
 
 logger = logging.getLogger(__name__)
 router = APIRouter()
@@ -107,6 +111,16 @@ class ContributorChatResponse(BaseModel):
     contributor_id: int
     username: str
     question: str
+    answer: str
+    evidence: List[EvidenceDocument]
+    grounding_status: str
+    document_count: int
+
+
+class ContributorVoiceChatResponse(BaseModel):
+    contributor_id: int
+    username: str
+    transcript: str = Field(..., description="Transcribed text from audio input")
     answer: str
     evidence: List[EvidenceDocument]
     grounding_status: str
@@ -234,3 +248,189 @@ def chat_with_contributor(
     except Exception as exc:
         logger.exception("Chat failed for contributor_id=%d", contributor_id)
         raise HTTPException(status_code=500, detail=f"Chat error: {exc}")
+
+
+# ──────────────────────────────────────────────
+#  4. Contributor Voice Chat API (Voice Digital Twin)
+# ──────────────────────────────────────────────
+
+
+@router.post("/contributors/{contributor_id}/voice-chat", response_model=ContributorVoiceChatResponse)
+def voice_chat_with_contributor_endpoint(
+    contributor_id: int,
+    audio_file: UploadFile = File(..., description="Audio file (MP3, WAV, OGG, FLAC, or M4A)"),
+    top_k: int = Query(
+        default=5,
+        ge=1,
+        le=15,
+        description="Number of evidence documents to retrieve for context",
+    ),
+):
+    """Chat with a contributor's **digital twin** using voice input.
+
+    This endpoint accepts an audio file, transcribes it using Groq Whisper,
+    and then uses the same contributor-scoped RAG pipeline as the text chat endpoint.
+
+    **Multipart Form Data:**
+    - `audio_file`: Audio file (required). Supported formats: MP3, WAV, OGG, FLAC, M4A
+    - `top_k`: Number of evidence documents (optional, default=5, max=15)
+
+    **Response:**
+    - `transcript`: The text transcribed from the audio input
+    - `answer`: LLM-generated response based on contributor's documents
+    - `evidence`: Matched documents grounding the answer
+    - `grounding_status`: "contributor_scoped" or "no_matches"
+    - `document_count`: Number of retrieved documents
+
+    **Guarantees:**
+    - Contributor-scoped retrieval (Qdrant filter on `contributor_id`)
+    - Audio transcription uses Groq Whisper (whisper-large-v3 model)
+    - Evidence always includes matched document snippets
+    - Never returns documents from other contributors
+
+    **Example curl:**
+    ```bash
+    curl -X POST "http://localhost:8000/contributors/1/voice-chat" \\
+      -F "audio_file=@sample_audio.mp3" \\
+      -F "top_k=5"
+    ```
+    """
+    logger.info(
+        "Voice chat requested: contributor_id=%d, file=%s, size=%d",
+        contributor_id,
+        audio_file.filename,
+        audio_file.size or 0,
+    )
+
+    # Validate file upload
+    if not audio_file.filename:
+        raise HTTPException(status_code=400, detail="Missing audio_file in request")
+
+    if audio_file.size and audio_file.size > 25 * 1024 * 1024:  # 25 MB limit
+        raise HTTPException(status_code=413, detail="Audio file too large (max 25 MB)")
+
+    try:
+        result = voice_chat_with_contributor(
+            contributor_id=contributor_id,
+            audio_file=audio_file.file,
+            filename=audio_file.filename,
+            top_k=top_k,
+        )
+
+        return ContributorVoiceChatResponse(
+            contributor_id=result["contributor_id"],
+            username=result["username"],
+            transcript=result["transcript"],
+            answer=result["answer"],
+            evidence=[EvidenceDocument(**ev) for ev in result["evidence"]],
+            grounding_status=result["grounding_status"],
+            document_count=result["document_count"],
+        )
+    except ValueError as e:
+        logger.error("Voice chat validation error: %s", e)
+        raise HTTPException(status_code=400, detail=str(e))
+    except Exception as exc:
+        logger.exception("Voice chat failed for contributor_id=%d", contributor_id)
+        raise HTTPException(status_code=500, detail=f"Voice chat error: {exc}")
+
+
+# ──────────────────────────────────────────────
+#  5. Contributor Voice Chat Audio API (TTS Output)
+# ──────────────────────────────────────────────
+
+
+@router.post(
+    "/contributors/{contributor_id}/voice-chat-audio",
+    responses={
+        200: {
+            "content": {
+                "audio/mpeg": {
+                    "schema": {"type": "string", "format": "binary"}
+                }
+            }
+        }
+    },
+)
+def voice_chat_audio_with_contributor_endpoint(
+    contributor_id: int,
+    audio_file: UploadFile = File(..., description="Audio file (MP3, WAV, OGG, FLAC, or M4A)"),
+    top_k: int = Query(
+        default=5,
+        ge=1,
+        le=15,
+        description="Number of evidence documents to retrieve for context",
+    ),
+):
+    """Chat with a contributor's digital twin using voice input and return spoken MP3 audio.
+
+    Pipeline:
+    - Accept multipart/form-data audio upload
+    - Transcribe using existing Groq Whisper flow
+    - Use existing contributor-scoped RAG (answer_for_contributor)
+    - Synthesize the LLM answer using ElevenLabs TTS
+
+    Returns raw MP3 audio (Content-Type: audio/mpeg).
+    """
+    logger.info(
+        "Voice chat (audio output) requested: contributor_id=%d, file=%s, size=%d",
+        contributor_id,
+        audio_file.filename,
+        audio_file.size or 0,
+    )
+
+    # Validate file upload
+    if not audio_file.filename:
+        raise HTTPException(status_code=400, detail="Missing audio_file in request")
+
+    if audio_file.size and audio_file.size > 25 * 1024 * 1024:  # 25 MB limit
+        raise HTTPException(status_code=413, detail="Audio file too large (max 25 MB)")
+
+    try:
+        # Reuse existing transcription + RAG logic
+        result = voice_chat_with_contributor(
+            contributor_id=contributor_id,
+            audio_file=audio_file.file,
+            filename=audio_file.filename,
+            top_k=top_k,
+        )
+
+        if "error" in result:
+            raise HTTPException(status_code=404, detail=result["error"])
+
+        answer_text = result.get("answer", "")
+        if not answer_text or not answer_text.strip():
+            raise HTTPException(status_code=500, detail="LLM returned empty answer text")
+
+        # Synthesize speech using ElevenLabs REST API
+        try:
+            # If voice_chat_with_contributor already synthesized audio and attached it, prefer that
+            audio_bytes = result.get("audio_mp3")
+            if not audio_bytes:
+                audio_bytes = generate_speech(answer_text)
+        except ValueError as e:
+            logger.error("TTS validation error: %s", e)
+            raise HTTPException(status_code=400, detail=str(e))
+        except TTSException as e:
+            logger.error("TTS provider error: %s", e)
+            raise HTTPException(status_code=502, detail=str(e))
+        except Exception as e:
+            logger.exception("TTS generation failed")
+            raise HTTPException(status_code=502, detail=f"Text-to-speech error: {e}")
+
+        if not audio_bytes:
+            raise HTTPException(status_code=502, detail="Received empty audio from TTS provider")
+
+        return StreamingResponse(
+            io.BytesIO(audio_bytes),
+            media_type="audio/mpeg",
+            headers={"Content-Disposition": "inline; filename=response.mp3"},
+        )
+
+    except HTTPException:
+        raise
+    except ValueError as e:
+        logger.error("Voice chat audio validation error: %s", e)
+        raise HTTPException(status_code=400, detail=str(e))
+    except Exception as exc:
+        logger.exception("Voice chat audio failed for contributor_id=%d", contributor_id)
+        raise HTTPException(status_code=500, detail=f"Voice chat audio error: {exc}")
