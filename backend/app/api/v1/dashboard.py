@@ -35,11 +35,22 @@ def get_dashboard_stats(repo_id: int):
             {"repo_id": repo_id}
         ).scalar()
 
+        updated = db.execute(
+            text("""
+            SELECT github_updated_at
+            FROM repositories
+            WHERE id = :repo_id
+            LIMIT 1
+            """),
+            {"repo_id": repo_id}
+        ).scalar()
+
         return {
             "repositories": repositories,
-            "contributors": contributors or 0,
-            "files": files or 0,
-            "topics": 0
+            "contributors": int(contributors or 0),
+            "files": int(files or 0),
+            "topics": 0,
+            "last_updated": updated.isoformat() if updated else None
         }
 
     finally:

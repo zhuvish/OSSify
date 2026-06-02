@@ -7,6 +7,10 @@ from backend.app.services.repo_service import process_repository
 from data_pipeline.utils.repo_parser import parse_github_url
 from backend.app.models.repository import Repository
 import threading
+from collections import defaultdict
+import math
+from backend.app.services.expertise_classifier import classify_file
+from backend.app.models.contributor import Contributor
 
 router = APIRouter()
 
@@ -169,6 +173,112 @@ def list_repositories():
                 "commits": int(row.commits),
                 "issues": int(row.issues)
             })
+
+        return result
+
+    finally:
+        db.close()
+@router.get("/repositories/{repo_id}/top-experts")
+def top_experts(repo_id: int):
+    db = SessionLocal()
+
+    try:
+        rows = db.execute(
+            text("""
+                SELECT cf.filename, c.contributor_id
+                FROM commit_files cf
+                JOIN commits c ON cf.commit_id = c.id
+                WHERE c.repo_id = :repo_id AND c.contributor_id IS NOT NULL
+            """),
+            {"repo_id": repo_id}
+        ).fetchall()
+
+        contributor_domain_files = defaultdict(lambda: defaultdict(set))
+
+        for row in rows:
+            filename = row.filename
+            contributor_id = row.contributor_id
+            domains = classify_file(filename) or []
+
+            for d in domains:
+                contributor_domain_files[contributor_id][d].add(filename)
+
+        results = []
+
+        for contributor_id, domains in contributor_domain_files.items():
+            domain_scores = {}
+            total_score = 0.0
+            for domain, files in domains.items():
+                raw = len(files)
+                score = round(math.log1p(raw) * 20, 2)
+                domain_scores[domain] = score
+                total_score += score
+
+            # get username
+            contributor = db.query(Contributor).filter_by(id=contributor_id).first()
+            username = contributor.username if contributor else str(contributor_id)
+
+            top_topics = sorted(domain_scores.items(), key=lambda x: x[1], reverse=True)[:5]
+            top_topics = [t[0] for t in top_topics]
+
+            results.append({
+                "id": contributor_id,
+                "username": username,
+                "score": round(total_score, 2),
+                "topics": top_topics
+            })
+
+        # sort by score desc and take top 5
+        results = sorted(results, key=lambda x: x["score"], reverse=True)[:5]
+
+        return results
+
+    finally:
+        db.close()
+
+
+@router.get("/repositories/{repo_id}/topics")
+def repo_topics(repo_id: int):
+    db = SessionLocal()
+
+    try:
+        rows = db.execute(
+            text("""
+                SELECT cf.filename, c.contributor_id
+                FROM commit_files cf
+                JOIN commits c ON cf.commit_id = c.id
+                WHERE c.repo_id = :repo_id
+            """),
+            {"repo_id": repo_id}
+        ).fetchall()
+
+        topic_files = defaultdict(set)
+        topic_contributors = defaultdict(set)
+
+        for row in rows:
+            filename = row.filename
+            contributor_id = row.contributor_id
+            domains = classify_file(filename) or []
+
+            for d in domains:
+                topic_files[d].add(filename)
+                if contributor_id:
+                    topic_contributors[d].add(contributor_id)
+
+        result = []
+        for topic, files in topic_files.items():
+            raw = len(files)
+            score = round(math.log1p(raw) * 20, 2)
+            contributors_count = len(topic_contributors.get(topic, set()))
+
+            result.append({
+                "topic": topic,
+                "score": score,
+                "contributors": contributors_count
+            })
+
+        # sort by score desc
+        result = sorted(result, key=lambda x: x["score"], reverse=True)
 
         return result
 
