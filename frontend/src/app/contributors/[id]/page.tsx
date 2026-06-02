@@ -1,12 +1,15 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useParams } from "next/navigation";
 import { getContributor } from "@/src/lib/contributors";
 import GraphView from "@/src/components/GraphView";
 import DigitalTwinCard from "@/src/components/DigitalTwinCard";
 
-export default function ContributorProfile({ params }: { params: { id: string } }) {
+export default function ContributorProfile() {
+  const params = useParams();
+  const contributorId = Number(params?.id);
+
   const [profile, setProfile] = useState<any | null>(null);
   const [loading, setLoading] = useState(true);
   const router = useRouter();
@@ -14,9 +17,15 @@ export default function ContributorProfile({ params }: { params: { id: string } 
   useEffect(() => {
     let mounted = true;
     async function load() {
+      if (!contributorId || isNaN(contributorId)) {
+        setProfile(null);
+        setLoading(false);
+        return;
+      }
+
       setLoading(true);
       try {
-        const data = await getContributor(Number(params.id));
+        const data = await getContributor(contributorId);
         if (!mounted) return;
         setProfile(data);
       } catch (e) {
@@ -27,7 +36,7 @@ export default function ContributorProfile({ params }: { params: { id: string } 
     }
     load();
     return () => { mounted = false; };
-  }, [params.id]);
+  }, [contributorId]);
 
   if (loading) {
     return <div className="p-8">Loading contributor...</div>;
@@ -148,7 +157,7 @@ export default function ContributorProfile({ params }: { params: { id: string } 
 
       {/* Digital Twin Card */}
       <div className="mt-6">
-        <DigitalTwinCard contributorId={Number(params.id)} />
+        <DigitalTwinCard contributorId={contributorId} />
       </div>
 
       {/* Graph */}

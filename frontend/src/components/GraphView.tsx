@@ -17,10 +17,22 @@ export default function GraphView({ repoId }: { repoId: number }) {
   const [error, setError] = useState<string | null>(null);
   const fgRef = useRef<any>(null);
   const [mounted, setMounted] = useState(false);
+  const containerRef = useRef<HTMLDivElement | null>(null);
+  const [width, setWidth] = useState<number>(800);
+  const height = 600;
 
   useEffect(() => {
     setMounted(true);
     return () => setMounted(false);
+  }, []);
+
+  useEffect(() => {
+    function updateWidth() {
+      if (containerRef.current) setWidth(containerRef.current.clientWidth);
+    }
+    updateWidth();
+    window.addEventListener('resize', updateWidth);
+    return () => window.removeEventListener('resize', updateWidth);
   }, []);
 
   useEffect(() => {
@@ -59,14 +71,20 @@ export default function GraphView({ repoId }: { repoId: number }) {
   }
 
   return (
-    <div className="h-[600px] rounded-xl border-2 border-slate-200">
+    <div ref={containerRef} className="h-[600px] w-full rounded-xl border-2 border-slate-200 overflow-hidden">
       <ForceGraph2D
         ref={fgRef}
+        width={width}
+        height={height}
         graphData={data}
         nodeLabel={(n: any) => n.label}
         nodeAutoColorBy={(n: any) => n.type}
         linkDirectionalArrowLength={3}
         linkDirectionalArrowRelPos={0.9}
+        nodeRelSize={8}
+        cooldownTicks={200}
+        d3VelocityDecay={0.25}
+        onEngineStop={() => fgRef.current?.zoomToFit(400)}
         onNodeHover={(node: any) => {
           // optional: could show tooltip via state
         }}
@@ -85,7 +103,6 @@ export default function GraphView({ repoId }: { repoId: number }) {
           ctx.fillText(label, node.x + 8, node.y);
         }}
         enableNodeDrag={true}
-        zoom={1}
       />
     </div>
   );

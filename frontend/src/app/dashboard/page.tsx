@@ -17,29 +17,25 @@ export default function DashboardPage() {
   const [repoName, setRepoName] = useState("");
   const [topExperts, setTopExperts] = useState<any[]>([]);
   const [topics, setTopics] = useState<any[]>([]);
+  const [repoId, setRepoId] = useState<number | null>(null);
 
   useEffect(() => {
-    const name = localStorage.getItem(
-      "selected_repo_name"
-    );
+    // Read selected repo info from localStorage after hydration
+    if (typeof window === 'undefined') return;
 
-    if (name) {
-      setRepoName(name);
-    }
+    const name = localStorage.getItem("selected_repo_name");
+    if (name) setRepoName(name);
+
+    const stored = localStorage.getItem('selected_repo_id');
+    const id = stored ? Number(stored) : null;
+    if (id && !isNaN(id)) setRepoId(id);
   }, []);
 
   useEffect(() => {
+    if (!repoId) return;
 
     async function load() {
-
-      const repoId = localStorage.getItem("selected_repo_id");
-
-      if (!repoId) return;
-
-      const data = await getDashboardStats(
-        Number(repoId)
-      );
-
+      const data = await getDashboardStats(Number(repoId));
       setStats(data);
 
       try {
@@ -59,8 +55,7 @@ export default function DashboardPage() {
     }
 
     load();
-
-  }, []);
+  }, [repoId]);
 
   return (
     <div className="bg-slate-100">
