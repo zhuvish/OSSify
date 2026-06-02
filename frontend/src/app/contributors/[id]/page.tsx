@@ -145,8 +145,13 @@ export default function ContributorProfile({ params }: { params: { id: string } 
 
       </div>
 
+      {/* Digital Twin Card */}
+      <div className="mt-6">
+        <DigitalTwinCard contributorId={Number(params.id)} />
+      </div>
+
       {/* Graph */}
-      <div className="bg-white rounded-2xl border border-slate-200 p-6">
+      <div className="bg-white rounded-2xl border border-slate-200 p-6 mt-6">
 
         <h2 className="text-xl font-semibold mb-4">Repository Connections</h2>
 
