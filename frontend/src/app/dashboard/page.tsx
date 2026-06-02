@@ -1,4 +1,46 @@
+"use client";
+
+import { useEffect, useState } from "react";
+import { getDashboardStats } from "@/src/lib/dashboard";
+
 export default function DashboardPage() {
+  const [stats, setStats] = useState({
+    repositories: 0,
+    contributors: 0,
+    files: 0,
+    topics: 0,
+  });
+  const [repoName, setRepoName] = useState("");
+
+  useEffect(() => {
+    const name = localStorage.getItem(
+      "selected_repo_name"
+    );
+
+    if (name) {
+      setRepoName(name);
+    }
+  }, []);
+
+  useEffect(() => {
+
+    async function load() {
+
+      const repoId = localStorage.getItem("selected_repo_id");
+
+      if (!repoId) return;
+
+      const data = await getDashboardStats(
+        Number(repoId)
+      );
+
+      setStats(data);
+    }
+
+    load();
+
+  }, []);
+
   return (
     <div className="bg-slate-100">
 
@@ -6,7 +48,7 @@ export default function DashboardPage() {
         <div className="flex justify-between items-start">
           <div>
             <h1 className="text-2xl font-bold text-white">
-              OSSify 🚀: Repository Intelligence Platform
+              OSSify 🚀: {repoName}
             </h1>
 
             <p className="mt-2 text-blue-100 mb-8">
@@ -15,11 +57,11 @@ export default function DashboardPage() {
           </div>
           <div className="mt-3 flex gap-3">
             <span className="bg-black/40 text-white px-4 py-1 rounded-2xl text-sm">
-              1 Repo
+              {stats.repositories} Repo
             </span>
 
             <span className="bg-black/40 text-white px-4 py-1 rounded-2xl text-sm">
-              67 Contributors
+              {stats.contributors} Contributors
             </span>
 
             <span className="bg-black/40 text-white px-4 py-1 rounded-2xl text-sm">
@@ -29,22 +71,22 @@ export default function DashboardPage() {
         </div>
         <div className="grid grid-cols-4 gap-4">
           <div className="bg-white rounded-xl shadow-sm border border-slate-200 py-3 px-4 h-20">
-            <h3 className="text-2xl font-bold text-slate-900">1</h3>
+            <h3 className="text-2xl font-bold text-slate-900">{stats.repositories}</h3>
             <p className="text-slate-500">Repositories</p>
           </div>
 
           <div className="bg-white rounded-xl shadow-sm border border-slate-200 py-3 px-4 h-20">
-            <h3 className="text-2xl font-bold text-slate-900">67</h3>
+            <h3 className="text-2xl font-bold text-slate-900">{stats.contributors}</h3>
             <p className="text-slate-500">Contributors</p>
           </div>
 
           <div className="bg-white rounded-xl shadow-sm border border-slate-200 py-3 px-4 h-20">
-            <h3 className="text-2xl font-bold text-slate-900">267</h3>
+            <h3 className="text-2xl font-bold text-slate-900">{stats.files}</h3>
             <p className="text-slate-500">Files</p>
           </div>
 
           <div className="bg-white rounded-xl shadow-sm border border-slate-200 py-3 px-4 h-20">
-            <h3 className="text-2xl font-bold text-slate-900">8</h3>
+            <h3 className="text-2xl font-bold text-slate-900">{stats.topics}</h3>
             <p className="text-slate-500">Topics</p>
           </div>
         </div>

@@ -65,6 +65,22 @@ def save_contributors(contributors_data):
     for c in contributors_data:
         existing = db.query(Contributor).filter_by(github_id=c["id"]).first()
         if existing:
+            existing.username = c["login"]
+            existing.profile_url = c.get("html_url")
+            existing.avatar_url = c.get("avatar_url")
+            existing.contributions_count = c.get("contributions")
+
+            existing.display_name = c.get("name")
+            existing.bio = c.get("bio")
+            existing.company = c.get("company")
+            existing.location = c.get("location")
+            existing.followers = c.get("followers")
+            existing.public_repos = c.get("public_repos")
+            existing.github_created_at = parse_datetime(
+                c.get("created_at")
+            )
+
+            db.add(existing)
             continue
 
         contributor = Contributor(
@@ -268,7 +284,8 @@ def save_prs(prs_data, repo_id):
                         github_id=pr["user"]["id"],
                         username=username,
                         profile_url=pr["user"].get("html_url"),
-                        avatar_url=pr["user"].get("avatar_url")
+                        avatar_url=pr["user"].get("avatar_url"),
+                        contributions_count=0
                     )
 
                     db.add(contributor)
@@ -374,7 +391,8 @@ def save_issues(issues_data, repo_id):
                         github_id=issue["user"]["id"],
                         username=username,
                         profile_url=issue["user"].get("html_url"),
-                        avatar_url=issue["user"].get("avatar_url")
+                        avatar_url=issue["user"].get("avatar_url"),
+                        contributions_count=0
                     )
 
                     db.add(contributor)

@@ -1,36 +1,32 @@
+"use client";
+
 import Link from "next/link";
+import { useEffect, useState } from "react";
+import { getContributors } from "@/src/lib/contributors";
 
 export default function ContributorsPage() {
-  const contributors = [
-    {
-      id: 1,
-      name: "davidism",
-      expertise: ["Authentication", "Sessions"],
-      commits: 42,
-      repos: 3,
-    },
-    {
-      id: 2,
-      name: "pgjones",
-      expertise: ["Routing", "Flask Core"],
-      commits: 38,
-      repos: 2,
-    },
-    {
-      id: 3,
-      name: "justquick",
-      expertise: ["Security", "Sessions"],
-      commits: 29,
-      repos: 1,
-    },
-    {
-      id: 4,
-      name: "mitsuhiko",
-      expertise: ["Jinja", "Werkzeug"],
-      commits: 51,
-      repos: 4,
-    },
-  ];
+  const [contributors, setContributors] = useState<any[]>([]);
+
+  useEffect(() => {
+
+    async function load() {
+
+      const repoId = localStorage.getItem(
+        "selected_repo_id"
+      );
+
+      if (!repoId) return;
+
+      const data = await getContributors(
+        Number(repoId)
+      );
+
+      setContributors(data);
+    }
+
+    load();
+
+  }, []);
 
   return (
     <div>
@@ -60,15 +56,15 @@ export default function ContributorsPage() {
                 <div className="flex items-center gap-4">
 
                   <div className="h-14 w-14 rounded-full bg-indigo-100 text-indigo-700 flex items-center justify-center font-bold text-lg">
-                    {c.name[0].toUpperCase()}
+                    {c.username[0].toUpperCase()}
                   </div>
 
                   <div>
                     <h2 className="text-lg font-semibold text-slate-900">
-                      {c.name}
+                      {c.username}
                     </h2>
 
-                    <div className="flex gap-2 mt-2">
+                    {/* <div className="flex gap-2 mt-2">
                       {c.expertise.map((skill) => (
                         <span
                           key={skill}
@@ -77,10 +73,10 @@ export default function ContributorsPage() {
                           {skill}
                         </span>
                       ))}
-                    </div>
+                    </div> */}
 
                     <p className="mt-3 text-sm text-slate-500">
-                      {c.commits} commits • {c.repos} repositories
+                      {c.commit_count} commits
                     </p>
                   </div>
 
