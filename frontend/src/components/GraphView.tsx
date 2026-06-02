@@ -4,7 +4,7 @@ import dynamic from "next/dynamic";
 import { useEffect, useRef, useState } from "react";
 import { getRepoGraph } from "@/src/lib/api";
 
-const ForceGraph2D = dynamic(() => import("react-force-graph-2d").then((m) => m.default), {
+const ForceGraph2D = dynamic(() => import("react-force-graph/dist/react-force-graph-2d").then((m) => m.default || m.ForceGraph2D), {
   ssr: false,
 });
 
