@@ -258,6 +258,56 @@ class GraphService:
                 if tnode in nodes and f"repo_{repo_id}" in nodes:
                     links.append({"source": tnode, "target": f"repo_{repo_id}", "type": "topic_of"})
 
+            # Contributor -> File edges, limited to avoid overloading the graph
+            q_files = """
+            MATCH (c:Contributor {repo_id:$repo_id})-[:CONTRIBUTED_TO]->(f:File {repo_id:$repo_id})
+            WITH c, f
+            LIMIT 5
+            RETURN c.id AS cid, c.username AS username, f.path AS filepath
+            """
+            for rec in session.run(q_files, repo_id=repo_id):
+                cid = rec["cid"]
+                username = rec["username"]
+                filepath = rec["filepath"]
+
+                contributor_node = f"contributor_{cid}"
+                file_node = f"file_{filepath}"
+
+                if contributor_node not in nodes:
+                    nodes[contributor_node] = {
+                        "id": contributor_node,
+                        "label": username or str(cid),
+                        "type": "contributor"
+                    }
+
+                if file_node not in nodes:
+                    nodes[file_node] = {
+                        "id": file_node,
+                        "label": filepath.split("/")[-1],
+                        "type": "file"
+                    }
+
+                links.append({
+                    "source": contributor_node,
+                    "target": file_node,
+                    "type": "modified"
+                })
+
+            # File -> Repository edges
+            q_repo_files = """
+            MATCH (f:File {repo_id:$repo_id})-[:PART_OF]->(r:Repository {id:$repo_id})
+            RETURN f.path AS filepath
+            """
+            for rec in session.run(q_repo_files, repo_id=repo_id):
+                filepath = rec["filepath"]
+                file_node = f"file_{filepath}"
+                if file_node in nodes and f"repo_{repo_id}" in nodes:
+                    links.append({
+                        "source": file_node,
+                        "target": f"repo_{repo_id}",
+                        "type": "part_of"
+                    })
+
             # Co-work edges between contributors
             q3 = """
             MATCH (c1:Contributor {repo_id:$repo_id})-[co:CO_WORKED_WITH]-(c2:Contributor {repo_id:$repo_id})
