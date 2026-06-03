@@ -209,3 +209,69 @@ class GraphService:
                 repo_id=repo_id,
                 topic_name=topic_name
             )
+
+    def get_graph_for_repo(self, repo_id: int):
+        nodes = {}
+        links = []
+
+        # Get repository node
+        with self.driver.session() as session:
+            repo_res = session.run(
+                "MATCH (r:Repository {id:$repo_id}) RETURN r.name AS name, r.id AS id",
+                repo_id=repo_id
+            ).single()
+
+            if repo_res:
+                rid = repo_res["id"]
+                rname = repo_res["name"]
+                nodes[f"repo_{rid}"] = {"id": f"repo_{rid}", "label": rname, "type": "repository"}
+
+            # Contributor -> Topic edges
+            q1 = """
+            MATCH (c:Contributor {repo_id:$repo_id})-[e:EXPERT_IN]->(t:Topic)
+            RETURN c.id AS cid, c.username AS username, t.name AS topic
+            """
+            for rec in session.run(q1, repo_id=repo_id):
+                cid = rec["cid"]
+                username = rec["username"]
+                topic = rec["topic"]
+
+                cnode = f"contributor_{cid}"
+                tnode = f"topic_{topic}"
+
+                if cnode not in nodes:
+                    nodes[cnode] = {"id": cnode, "label": username or str(cid), "type": "contributor"}
+                if tnode not in nodes:
+                    nodes[tnode] = {"id": tnode, "label": topic, "type": "topic"}
+
+                links.append({"source": cnode, "target": tnode, "type": "expert_in"})
+
+            # Topic -> Repository edges: topics that appear in this repo
+            q2 = """
+            MATCH (t:Topic)
+            WHERE exists((:Contributor {repo_id:$repo_id})-[:EXPERT_IN]->(t))
+            RETURN t.name AS topic
+            """
+            for rec in session.run(q2, repo_id=repo_id):
+                topic = rec["topic"]
+                tnode = f"topic_{topic}"
+                if tnode in nodes and f"repo_{repo_id}" in nodes:
+                    links.append({"source": tnode, "target": f"repo_{repo_id}", "type": "topic_of"})
+
+            # Co-work edges between contributors
+            q3 = """
+            MATCH (c1:Contributor {repo_id:$repo_id})-[co:CO_WORKED_WITH]-(c2:Contributor {repo_id:$repo_id})
+            RETURN c1.id AS c1, c2.id AS c2
+            """
+            for rec in session.run(q3, repo_id=repo_id):
+                c1 = rec["c1"]
+                c2 = rec["c2"]
+                n1 = f"contributor_{c1}"
+                n2 = f"contributor_{c2}"
+                if n1 not in nodes:
+                    nodes[n1] = {"id": n1, "label": str(c1), "type": "contributor"}
+                if n2 not in nodes:
+                    nodes[n2] = {"id": n2, "label": str(c2), "type": "contributor"}
+                links.append({"source": n1, "target": n2, "type": "co_worked"})
+
+        return {"nodes": list(nodes.values()), "links": links}

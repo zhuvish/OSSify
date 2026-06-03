@@ -27,16 +27,6 @@ const items = [
     href: "/contributors",
     icon: Users,
   },
-  {
-    name: "Graph Explorer",
-    href: "/graph",
-    icon: Network,
-  },
-  {
-    name: "Ask AI",
-    href: "/chat",
-    icon: Bot,
-  },
 ];
 
 export default function Sidebar() {

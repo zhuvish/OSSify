@@ -35,11 +35,17 @@ def get_dashboard_stats(repo_id: int):
             {"repo_id": repo_id}
         ).scalar()
 
+        from datetime import datetime
+
+        # Use current server time as last_updated (deterministic for SSR)
+        updated = datetime.now()
+
         return {
             "repositories": repositories,
-            "contributors": contributors or 0,
-            "files": files or 0,
-            "topics": 0
+            "contributors": int(contributors or 0),
+            "files": int(files or 0),
+            "topics": 0,
+            "last_updated": updated.isoformat()
         }
 
     finally:

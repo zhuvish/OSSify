@@ -1,4 +1,51 @@
+"use client";
+
+import { useEffect, useState } from "react";
+import { useRouter, useParams } from "next/navigation";
+import { getContributor } from "@/src/lib/contributors";
+import GraphView from "@/src/components/GraphView";
+import DigitalTwinCard from "@/src/components/DigitalTwinCard";
+
 export default function ContributorProfile() {
+  const params = useParams();
+  const contributorId = Number(params?.id);
+
+  const [profile, setProfile] = useState<any | null>(null);
+  const [loading, setLoading] = useState(true);
+  const router = useRouter();
+
+  useEffect(() => {
+    let mounted = true;
+    async function load() {
+      if (!contributorId || isNaN(contributorId)) {
+        setProfile(null);
+        setLoading(false);
+        return;
+      }
+
+      setLoading(true);
+      try {
+        const data = await getContributor(contributorId);
+        if (!mounted) return;
+        setProfile(data);
+      } catch (e) {
+        setProfile(null);
+      } finally {
+        if (mounted) setLoading(false);
+      }
+    }
+    load();
+    return () => { mounted = false; };
+  }, [contributorId]);
+
+  if (loading) {
+    return <div className="p-8">Loading contributor...</div>;
+  }
+
+  if (!profile) {
+    return <div className="p-8">Contributor not found.</div>;
+  }
+
   return (
     <div className="space-y-6">
 
@@ -8,30 +55,28 @@ export default function ContributorProfile() {
         <div className="flex items-center gap-5">
 
           <div className="h-20 w-20 rounded-full bg-indigo-100 flex items-center justify-center text-3xl font-bold text-indigo-700">
-            D
+            {profile.username ? profile.username.charAt(0).toUpperCase() : 'U'}
           </div>
 
           <div>
-            <h1 className="text-3xl font-bold text-slate-900">
-              davidism
-            </h1>
+            <h1 className="text-3xl font-bold text-slate-900">{profile.username}</h1>
 
             <p className="text-slate-500">
-              github.com/davidism
+              {profile.profile_url}
             </p>
 
             <div className="flex gap-3 mt-3">
 
               <span className="px-3 py-1 rounded-full bg-indigo-100 text-indigo-700 text-sm">
-                42 Commits
+                {profile.commit_count} Commits
               </span>
 
               <span className="px-3 py-1 rounded-full bg-green-100 text-green-700 text-sm">
-                3 Repositories
+                {profile.top_repositories ? profile.top_repositories.length : 0} Repositories
               </span>
 
               <span className="px-3 py-1 rounded-full bg-purple-100 text-purple-700 text-sm">
-                5 Expertise Areas
+                {(profile.expertise_areas || []).length} Expertise Areas
               </span>
 
             </div>
@@ -43,17 +88,12 @@ export default function ContributorProfile() {
       {/* Summary */}
       <div className="bg-white rounded-2xl border border-slate-200 p-6">
 
-        <h2 className="text-xl font-semibold mb-4">
-          Contributor Summary
-        </h2>
+        <h2 className="text-xl font-semibold mb-4">Contributor Summary</h2>
 
         <p className="text-slate-600 leading-7">
-          David demonstrates strong expertise in Flask's
-          authentication system, session handling and
-          security-related modules. Their contributions
-          focus heavily on backend infrastructure and
-          framework internals, making them a key
-          contributor for authentication workflows.
+          {profile.semantic_expertise_summary && profile.semantic_expertise_summary.length ? (
+            profile.semantic_expertise_summary.map((s:any) => s.term).join(', ')
+          ) : (profile.bio || 'No summary available.')}
         </p>
 
       </div>
@@ -64,33 +104,15 @@ export default function ContributorProfile() {
         {/* Repository Contributions */}
         <div className="col-span-2 bg-white rounded-2xl border border-slate-200 p-6">
 
-          <h2 className="text-xl font-semibold mb-4">
-            Repository Contributions
-          </h2>
+          <h2 className="text-xl font-semibold mb-4">Repository Contributions</h2>
 
           <ul className="space-y-4">
-
-            <li>
-              <p className="font-medium">Flask</p>
-              <p className="text-slate-500 text-sm">
-                Authentication and session management
-              </p>
-            </li>
-
-            <li>
-              <p className="font-medium">Werkzeug</p>
-              <p className="text-slate-500 text-sm">
-                Routing and request lifecycle
-              </p>
-            </li>
-
-            <li>
-              <p className="font-medium">Jinja</p>
-              <p className="text-slate-500 text-sm">
-                Template rendering improvements
-              </p>
-            </li>
-
+            {(profile.top_repositories || []).map((r:any) => (
+              <li key={r.name}>
+                <p className="font-medium">{r.name}</p>
+                <p className="text-slate-500 text-sm">Top repository</p>
+              </li>
+            ))}
           </ul>
 
         </div>
@@ -98,38 +120,19 @@ export default function ContributorProfile() {
         {/* Recent Activity */}
         <div className="bg-white rounded-2xl border border-slate-200 p-6">
 
-          <h2 className="text-xl font-semibold mb-4">
-            Recent Activity
-          </h2>
+          <h2 className="text-xl font-semibold mb-4">Recent Activity</h2>
 
           <div className="space-y-4">
+            {(profile.recent_activity || []).map((a:any, idx:number) => (
+              <div key={idx}>
+                <p className="font-medium">{a.type === 'commit' ? (a.description || a.sha) : (a.description || '')}</p>
+                <p className="text-sm text-slate-500">{a.date}</p>
+              </div>
+            ))}
 
-            <div>
-              <p className="font-medium">
-                Fixed auth bug
-              </p>
-              <p className="text-sm text-slate-500">
-                2 hours ago
-              </p>
-            </div>
-
-            <div>
-              <p className="font-medium">
-                Added middleware
-              </p>
-              <p className="text-sm text-slate-500">
-                Yesterday
-              </p>
-            </div>
-
-            <div>
-              <p className="font-medium">
-                Refactored routing
-              </p>
-              <p className="text-sm text-slate-500">
-                3 days ago
-              </p>
-            </div>
+            {(!profile.recent_activity || profile.recent_activity.length === 0) && (
+              <div className="text-sm text-slate-500">No recent activity available.</div>
+            )}
 
           </div>
 
@@ -140,42 +143,39 @@ export default function ContributorProfile() {
       {/* Expertise */}
       <div className="bg-white rounded-2xl border border-slate-200 p-6">
 
-        <h2 className="text-xl font-semibold mb-4">
-          Expertise
-        </h2>
+        <h2 className="text-xl font-semibold mb-4">Expertise</h2>
 
         <div className="flex flex-wrap gap-3">
 
-          <span className="px-4 py-2 rounded-full bg-indigo-100 text-indigo-700">
-            Authentication
-          </span>
-
-          <span className="px-4 py-2 rounded-full bg-purple-100 text-purple-700">
-            Sessions
-          </span>
-
-          <span className="px-4 py-2 rounded-full bg-red-100 text-red-700">
-            Security
-          </span>
-
-          <span className="px-4 py-2 rounded-full bg-green-100 text-green-700">
-            Flask Core
-          </span>
+          {(profile.expertise_areas || []).map((e:any) => (
+            <span key={e.domain} className="px-4 py-2 rounded-full bg-indigo-100 text-indigo-700">{e.domain}</span>
+          ))}
 
         </div>
 
       </div>
 
+      {/* Digital Twin Card */}
+      <div className="mt-6">
+        <DigitalTwinCard contributorId={contributorId} />
+      </div>
+
       {/* Graph */}
-      <div className="bg-white rounded-2xl border border-slate-200 p-6">
+      <div className="bg-white rounded-2xl border border-slate-200 p-6 mt-6">
 
-        <h2 className="text-xl font-semibold mb-4">
-          Repository Connections
-        </h2>
+        <h2 className="text-xl font-semibold mb-4">Repository Connections</h2>
 
-        <div className="h-[350px] rounded-xl border-2 border-dashed border-slate-200 flex items-center justify-center">
-          Graph Visualization Here
-        </div>
+        {/* show graph for the first repo the contributor contributed to if available */}
+        {profile.top_repositories && profile.top_repositories.length > 0 ? (
+          <div className="h-[350px] rounded-xl border-2 border-dashed border-slate-200">
+            {/* GraphView expects repo id; attempt to read from localStorage selected_repo_id */}
+            {typeof window !== 'undefined' && localStorage.getItem('selected_repo_id') && (
+              <GraphView repoId={Number(localStorage.getItem('selected_repo_id'))} />
+            )}
+          </div>
+        ) : (
+          <div className="h-[350px] rounded-xl border-2 border-dashed border-slate-200 flex items-center justify-center text-slate-400">No repository connections</div>
+        )}
 
       </div>
 
