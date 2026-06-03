@@ -110,8 +110,8 @@ export default function DashboardPage() {
 
       <div className="ml-5 mr-5 grid grid-cols-12 gap-6 mt-6">
 
-        <div className="col-span-2 space-y-6">
-          <div className="bg-white rounded-2xl border border-slate-200 p-6">
+        <div className="col-span-4 space-y-6">
+          <div className="bg-white rounded-2xl border border-slate-200 p-6 h-[700px] overflow-y-auto">
             <h2 className="text-2xl font-semibold text-slate-900 mb-6">
               Top Experts
             </h2>
@@ -142,7 +142,7 @@ export default function DashboardPage() {
           </div>
           </div>
 
-        <div className="col-span-10">
+        <div className="col-span-8">
           <div className="bg-white rounded-2xl border border-slate-200 p-6 h-[700px]">
             <div className="flex justify-between items-center mb-6">
               <h2 className="text-2xl font-semibold">
