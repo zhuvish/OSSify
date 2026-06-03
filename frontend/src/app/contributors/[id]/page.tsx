@@ -39,7 +39,40 @@ export default function ContributorProfile() {
   }, [contributorId]);
 
   if (loading) {
-    return <div className="p-8">Loading contributor...</div>;
+    return (
+      <div className="p-8 space-y-6 animate-pulse">
+        <div className="bg-white rounded-2xl border border-slate-200 p-6">
+          <div className="flex items-center gap-5">
+            <div className="h-20 w-20 rounded-full bg-slate-200" />
+            <div className="flex-1 space-y-3">
+              <div className="h-6 w-48 bg-slate-200 rounded" />
+              <div className="h-4 w-64 bg-slate-200 rounded" />
+              <div className="flex gap-3 mt-3">
+                <div className="h-6 w-24 bg-slate-200 rounded-full" />
+                <div className="h-6 w-24 bg-slate-200 rounded-full" />
+                <div className="h-6 w-24 bg-slate-200 rounded-full" />
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div className="bg-white rounded-2xl border border-slate-200 p-6">
+          <div className="h-24 bg-slate-200 rounded" />
+        </div>
+
+        <div className="bg-white rounded-2xl border border-slate-200 p-6">
+          <div className="flex gap-3">
+            <div className="h-8 w-24 bg-slate-200 rounded" />
+            <div className="h-8 w-24 bg-slate-200 rounded" />
+            <div className="h-8 w-24 bg-slate-200 rounded" />
+          </div>
+        </div>
+
+        <div className="bg-white rounded-2xl border border-slate-200 p-6">
+          <div className="h-40 bg-slate-200 rounded" />
+        </div>
+      </div>
+    );
   }
 
   if (!profile) {

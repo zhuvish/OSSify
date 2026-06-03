@@ -110,7 +110,7 @@ export default function DashboardPage() {
 
       <div className="ml-5 mr-5 grid grid-cols-12 gap-6 mt-6">
 
-        <div className="col-span-3 space-y-6">
+        <div className="col-span-2 space-y-6">
           <div className="bg-white rounded-2xl border border-slate-200 p-6">
             <h2 className="text-2xl font-semibold text-slate-900 mb-6">
               Top Experts
@@ -121,16 +121,16 @@ export default function DashboardPage() {
                 <div className="text-sm text-slate-500">No experts yet.</div>
               ) : (
                 topExperts.map((e) => (
-                  <div key={e.id} className="flex items-center gap-3">
+                                  <div key={e.id} className="flex items-center gap-3 max-w-full overflow-hidden">
                     <div className="h-12 w-12 rounded-full bg-indigo-100 flex items-center justify-center font-bold text-indigo-700">
                       {e.username ? e.username.charAt(0).toUpperCase() : 'U'}
                     </div>
 
-                    <div>
-                      <p className="font-medium text-slate-900">{e.username}</p>
+                                    <div className="min-w-0">
+                                      <p className="font-medium text-slate-900 truncate">{e.username}</p>
 
-                      <div className="flex gap-2 mt-1">
-                        {(e.topics || []).slice(0, 4).map((t: string) => (
+                                      <div className="flex flex-wrap gap-2 mt-1">
+                                        {(e.topics || []).slice(0, 2).map((t: string) => (
                           <span key={t} className="px-2 py-1 text-xs rounded-full bg-blue-100 text-blue-700">{t}</span>
                         ))}
                       </div>
@@ -141,20 +141,10 @@ export default function DashboardPage() {
             </div>
           </div>
 
-          <div className="bg-white rounded-2xl border border-slate-200 p-6 mt-6">
-            <h2 className="text-xl font-semibold mb-5">
-              Repository Activity
-            </h2>
-
-            <div className="space-y-5">
-              <div className="text-sm text-slate-500">Repository activity will appear here after ingestion is complete.</div>
-            </div>
-          </div>
-        </div>
 
 
 
-        <div className="col-span-9">
+        <div className="col-span-10">
           <div className="bg-white rounded-2xl border border-slate-200 p-6 h-[700px]">
             <div className="flex justify-between items-center mb-6">
               <h2 className="text-2xl font-semibold">
