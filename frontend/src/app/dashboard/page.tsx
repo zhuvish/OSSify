@@ -140,9 +140,7 @@ export default function DashboardPage() {
               )}
             </div>
           </div>
-
-
-
+          </div>
 
         <div className="col-span-10">
           <div className="bg-white rounded-2xl border border-slate-200 p-6 h-[700px]">
