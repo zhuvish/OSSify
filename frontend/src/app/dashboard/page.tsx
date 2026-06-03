@@ -16,6 +16,7 @@ import {
 
 import StatCard from "@/src/components/StatCard";
 import TopExperts from "@/src/components/TopExperts";
+import AskAI from "@/src/components/AskAI";
 
 const GraphView = dynamic(() => import('@/src/components/GraphView'), { ssr: false });
 
@@ -31,6 +32,7 @@ export default function DashboardPage() {
   const [topExperts, setTopExperts] = useState<any[]>([]);
   const [topics, setTopics] = useState<any[]>([]);
   const [repoId, setRepoId] = useState<number | null>(null);
+  const [maxContributors, setMaxContributors] = useState(25);
 
   useEffect(() => {
     // Read selected repo info from localStorage after hydration
@@ -195,7 +197,7 @@ export default function DashboardPage() {
 
               </div>
 
-              <select
+              {/* <select
                 className="
                 border
                 rounded-xl
@@ -208,13 +210,26 @@ export default function DashboardPage() {
                 <option>
                   Top 25 Contributors
                 </option>
+              </select> */}
+
+              <select
+                value={maxContributors}
+                onChange={(e) =>
+                  setMaxContributors(Number(e.target.value))
+                }
+              >
+                <option value={25}>Top 25</option>
+                <option value={50}>Top 50</option>
+                <option value={999}>All</option>
               </select>
 
             </div>
 
             {repoId && (
-              <GraphView repoId={repoId} />
+              <GraphView repoId={repoId} maxContributors={maxContributors} />
             )}
+
+            <AskAI />
 
           </div>
 

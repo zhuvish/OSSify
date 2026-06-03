@@ -27,7 +27,7 @@ export default function TopExperts({
 
       <div className="space-y-5">
 
-        {experts.map((expert) => (
+        {experts.map((expert, index) => (
           <div
             key={expert.id}
             className="border rounded-2xl p-5 shadow-sm hover:shadow-md transition"
@@ -41,9 +41,12 @@ export default function TopExperts({
                 </div>
 
                 <div>
-                  <p className="font-semibold">
-                    {expert.username}
-                  </p>
+                  <div className="flex items-center gap-2">
+                    <p className="font-semibold">
+                      {expert.username}
+                    </p>
+                    <span className="text-xs text-slate-500">#{index + 1}</span>
+                  </div>
 
                   <div className="flex flex-wrap gap-2 mt-2">
                     {(expert.topics || [])

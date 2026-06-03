@@ -11,7 +11,8 @@ const ForceGraph2D = dynamic(
   }
 );
 
-export default function GraphView({ repoId }: { repoId: number }) {
+export default function GraphView({ repoId, maxContributors = 25 }: { repoId: number; maxContributors?: number }) {
+  const [fullData, setFullData] = useState<any>({ nodes: [], links: [] });
   const [data, setData] = useState<any>({ nodes: [], links: [] });
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -20,6 +21,40 @@ export default function GraphView({ repoId }: { repoId: number }) {
   const containerRef = useRef<HTMLDivElement | null>(null);
   const [width, setWidth] = useState<number>(800);
   const height = 650;
+  const [hoverNode, setHoverNode] = useState<any>(null);
+
+  function filterGraph(graph: any, maxContributors: number) {
+    if (!graph?.nodes?.length || maxContributors >= 999) return graph;
+
+    const contributorNodes = graph.nodes.filter((node: any) => node.type === "contributor");
+    const selectedContributors = contributorNodes.slice(0, maxContributors).map((node: any) => node.id);
+    const contributorSet = new Set(selectedContributors);
+
+    const incidentLinks = graph.links.filter((link: any) => {
+      const sourceId = typeof link.source === "object" ? link.source.id : link.source;
+      const targetId = typeof link.target === "object" ? link.target.id : link.target;
+      return contributorSet.has(sourceId) || contributorSet.has(targetId);
+    });
+
+    const includedNodeIds = new Set<string>(selectedContributors);
+    incidentLinks.forEach((link: any) => {
+      const sourceId = typeof link.source === "object" ? link.source.id : link.source;
+      const targetId = typeof link.target === "object" ? link.target.id : link.target;
+      includedNodeIds.add(sourceId);
+      includedNodeIds.add(targetId);
+    });
+
+    const extraLinks = graph.links.filter((link: any) => {
+      const sourceId = typeof link.source === "object" ? link.source.id : link.source;
+      const targetId = typeof link.target === "object" ? link.target.id : link.target;
+      return includedNodeIds.has(sourceId) && includedNodeIds.has(targetId) && !incidentLinks.includes(link);
+    });
+
+    const filteredLinks = [...incidentLinks, ...extraLinks];
+    const filteredNodes = graph.nodes.filter((node: any) => includedNodeIds.has(node.id));
+
+    return { nodes: filteredNodes, links: filteredLinks };
+  }
 
   useEffect(() => {
     setMounted(true);
@@ -42,7 +77,8 @@ export default function GraphView({ repoId }: { repoId: number }) {
     getRepoGraph(repoId)
       .then((d) => {
         if (!active || !mounted) return;
-        setData(d);
+        setFullData(d);
+        setData(filterGraph(d, maxContributors));
       })
       .catch((e) => {
         if (!active || !mounted) return;
@@ -57,6 +93,11 @@ export default function GraphView({ repoId }: { repoId: number }) {
       active = false;
     };
   }, [repoId, mounted]);
+
+  useEffect(() => {
+    if (!fullData?.nodes?.length) return;
+    setData(filterGraph(fullData, maxContributors));
+  }, [fullData, maxContributors]);
 
   useEffect(() => {
     if (!fgRef.current || !data?.nodes?.length) return;
@@ -110,9 +151,7 @@ export default function GraphView({ repoId }: { repoId: number }) {
         cooldownTicks={500}
         d3VelocityDecay={0.15}
         onEngineStop={() => fgRef.current?.zoomToFit(800, 50)}
-        onNodeHover={(node: any) => {
-          // optional: could show tooltip via state
-        }}
+        onNodeHover={setHoverNode}
         // nodeCanvasObject={(node: any, ctx: CanvasRenderingContext2D, globalScale: number) => {
         //   const label = node.label;
         //   const fontSize = 12 / (globalScale || 1);
@@ -127,6 +166,7 @@ export default function GraphView({ repoId }: { repoId: number }) {
         //   ctx.textBaseline = "middle";
         //   ctx.fillText(label, node.x + 8, node.y);
         // }}
+
         nodeCanvasObject={(node: any, ctx, globalScale) => {
           const label = node.label;
 
@@ -158,7 +198,14 @@ export default function GraphView({ repoId }: { repoId: number }) {
           ctx.font = `${fontSize}px Sans-Serif`;
           ctx.fillStyle = "#111827";
 
-          if (globalScale > 1.5) {
+          // if (globalScale > 1.5) {
+          //   ctx.fillText(
+          //     label,
+          //     node.x + radius + 4,
+          //     node.y
+          //   );
+          // }/
+          if (hoverNode?.id === node.id) {
             ctx.fillText(
               label,
               node.x + radius + 4,
