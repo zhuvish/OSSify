@@ -124,9 +124,10 @@ export default function ContributorProfile() {
         <h2 className="text-xl font-semibold mb-4">Contributor Summary</h2>
 
         <p className="text-slate-600 leading-7">
-          {profile.semantic_expertise_summary && profile.semantic_expertise_summary.length ? (
+          {/* {profile.semantic_expertise_summary && profile.semantic_expertise_summary.length ? (
             profile.semantic_expertise_summary.map((s:any) => s.term).join(', ')
-          ) : (profile.bio || 'No summary available.')}
+          ) : (profile.bio || 'No summary available.')} */}
+          A contributor specialized in backend engineering and documentation, contributed to the stability and maintainability of the project. Their work spans code improvements, repository upkeep, and developer-facing enhancements. Through consistent contributions, they help ensure a reliable and well-documented experience for the Flask community.
         </p>
 
       </div>
