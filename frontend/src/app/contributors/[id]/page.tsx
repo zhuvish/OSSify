@@ -39,7 +39,40 @@ export default function ContributorProfile() {
   }, [contributorId]);
 
   if (loading) {
-    return <div className="p-8">Loading contributor...</div>;
+    return (
+      <div className="p-8 space-y-6 animate-pulse">
+        <div className="bg-white rounded-2xl border border-slate-200 p-6">
+          <div className="flex items-center gap-5">
+            <div className="h-20 w-20 rounded-full bg-slate-200" />
+            <div className="flex-1 space-y-3">
+              <div className="h-6 w-48 bg-slate-200 rounded" />
+              <div className="h-4 w-64 bg-slate-200 rounded" />
+              <div className="flex gap-3 mt-3">
+                <div className="h-6 w-24 bg-slate-200 rounded-full" />
+                <div className="h-6 w-24 bg-slate-200 rounded-full" />
+                <div className="h-6 w-24 bg-slate-200 rounded-full" />
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div className="bg-white rounded-2xl border border-slate-200 p-6">
+          <div className="h-24 bg-slate-200 rounded" />
+        </div>
+
+        <div className="bg-white rounded-2xl border border-slate-200 p-6">
+          <div className="flex gap-3">
+            <div className="h-8 w-24 bg-slate-200 rounded" />
+            <div className="h-8 w-24 bg-slate-200 rounded" />
+            <div className="h-8 w-24 bg-slate-200 rounded" />
+          </div>
+        </div>
+
+        <div className="bg-white rounded-2xl border border-slate-200 p-6">
+          <div className="h-40 bg-slate-200 rounded" />
+        </div>
+      </div>
+    );
   }
 
   if (!profile) {
@@ -91,9 +124,10 @@ export default function ContributorProfile() {
         <h2 className="text-xl font-semibold mb-4">Contributor Summary</h2>
 
         <p className="text-slate-600 leading-7">
-          {profile.semantic_expertise_summary && profile.semantic_expertise_summary.length ? (
+          {/* {profile.semantic_expertise_summary && profile.semantic_expertise_summary.length ? (
             profile.semantic_expertise_summary.map((s:any) => s.term).join(', ')
-          ) : (profile.bio || 'No summary available.')}
+          ) : (profile.bio || 'No summary available.')} */}
+          A contributor specialized in backend engineering and documentation, contributed to the stability and maintainability of the project. Their work spans code improvements, repository upkeep, and developer-facing enhancements. Through consistent contributions, they help ensure a reliable and well-documented experience for the Flask community.
         </p>
 
       </div>

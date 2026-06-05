@@ -4,6 +4,20 @@ import { useEffect, useState } from "react";
 import dynamic from 'next/dynamic';
 import { getDashboardStats } from "@/src/lib/dashboard";
 
+import {
+  Users,
+  FolderGit2,
+  FileText,
+  Tags,
+  Calendar,
+  Share2,
+  Crown,
+} from "lucide-react";
+
+import StatCard from "@/src/components/StatCard";
+import TopExperts from "@/src/components/TopExperts";
+import AskAI from "@/src/components/AskAI";
+
 const GraphView = dynamic(() => import('@/src/components/GraphView'), { ssr: false });
 
 export default function DashboardPage() {
@@ -18,6 +32,7 @@ export default function DashboardPage() {
   const [topExperts, setTopExperts] = useState<any[]>([]);
   const [topics, setTopics] = useState<any[]>([]);
   const [repoId, setRepoId] = useState<number | null>(null);
+  const [maxContributors, setMaxContributors] = useState(25);
 
   useEffect(() => {
     // Read selected repo info from localStorage after hydration
@@ -58,133 +73,166 @@ export default function DashboardPage() {
   }, [repoId]);
 
   return (
-    <div className="bg-slate-100">
+    <div>
 
-      <div className="ml-5 mr-5 rounded-xl bg-gradient-to-r from-indigo-700 to-blue-500 px-8 py-6">
-        <div className="flex justify-between items-start">
-          <div>
-            <h1 className="text-2xl font-bold text-white">
-              OSSify 🚀: {repoName}
-            </h1>
+      <div className="flex justify-end gap-4 mb-4">
 
-            <p className="mt-2 text-blue-100 mb-8">
-              Discover expertise, contributor networks and repository knowledge.
-            </p>
-          </div>
-          <div className="mt-3 flex gap-3">
-            <span className="bg-black/40 text-white px-4 py-1 rounded-2xl text-sm">
-              {stats.repositories} Repo
-            </span>
+              <div className="bg-white px-5 py-3 rounded-2xl shadow-sm flex items-center gap-2">
+        <FileText size={18} />
+        <span>{stats.repositories} Repository</span>
+      </div>
 
-            <span className="bg-black/40 text-white px-4 py-1 rounded-2xl text-sm">
-              {stats.contributors} Contributors
-            </span>
+      <div className="bg-white px-5 py-3 rounded-2xl shadow-sm flex items-center gap-2">
+        <Users size={18} />
+        <span>{stats.contributors} Contributors</span>
+      </div>
 
-            <span className="bg-black/40 text-white px-4 py-1 rounded-2xl text-sm">
-              {stats.last_updated ? new Date(stats.last_updated).toISOString().split("T")[0] : ""}
-            </span>
-          </div>
-        </div>
-        <div className="grid grid-cols-4 gap-4">
-          <div className="bg-white rounded-xl shadow-sm border border-slate-200 py-3 px-4 h-20">
-            <h3 className="text-2xl font-bold text-slate-900">{stats.repositories}</h3>
-            <p className="text-slate-500">Repositories</p>
-          </div>
+      <div className="bg-white px-5 py-3 rounded-2xl shadow-sm flex items-center gap-2">
+        <Calendar size={18} />
+        <span>
+          {stats.last_updated
+            ? new Date(stats.last_updated).toLocaleDateString()
+            : ""}
+        </span>
+      </div>
 
-          <div className="bg-white rounded-xl shadow-sm border border-slate-200 py-3 px-4 h-20">
-            <h3 className="text-2xl font-bold text-slate-900">{stats.contributors}</h3>
-            <p className="text-slate-500">Contributors</p>
-          </div>
+      </div>
 
-          <div className="bg-white rounded-xl shadow-sm border border-slate-200 py-3 px-4 h-20">
-            <h3 className="text-2xl font-bold text-slate-900">{stats.files}</h3>
-            <p className="text-slate-500">Files</p>
-          </div>
+      <div className="bg-gradient-to-r from-blue-600 via-indigo-600 to-violet-600 rounded-[32px] px-10 py-12 mb-8">
 
-          <div className="bg-white rounded-xl shadow-sm border border-slate-200 py-3 px-4 h-20">
-            <h3 className="text-2xl font-bold text-slate-900">{stats.topics}</h3>
-            <p className="text-slate-500">Topics</p>
-          </div>
+        <h1 className="text-6xl font-bold text-white">
+          OSSify 🚀 {repoName}
+        </h1>
+
+        {/* <p className="text-white/80 mt-2 mb-8 text-lg"> */}
+        <p className="text-white/90 mt-3 mb-10 text-xl">
+          Discover expertise, contributor
+          networks and repository knowledge.
+        </p>
+
+        <div className="grid grid-cols-4 gap-6">
+
+          <StatCard
+            icon={FolderGit2}
+            value={stats.repositories}
+            title="Repositories"
+            subtitle="Tracked Repository"
+          />
+
+          <StatCard
+            icon={Users}
+            value={stats.contributors}
+            title="Contributors"
+            subtitle="Active Contributors"
+          />
+
+          <StatCard
+            icon={FileText}
+            value={stats.files}
+            title="Files"
+            subtitle="In Repository"
+          />
+
+          <StatCard
+            icon={Tags}
+            value={stats.topics}
+            title="Topics"
+            subtitle="Detected Topics"
+          />
+
         </div>
       </div>
 
-      <div className="ml-5 mr-5 grid grid-cols-12 gap-6 mt-6">
+      <div className="grid grid-cols-12 gap-6">
 
-        <div className="col-span-3 space-y-6">
-          <div className="bg-white rounded-2xl border border-slate-200 p-6">
-            <h2 className="text-2xl font-semibold text-slate-900 mb-6">
-              Top Experts
-            </h2>
-
-            <div className="space-y-5">
-              {topExperts.length === 0 ? (
-                <div className="text-sm text-slate-500">No experts yet.</div>
-              ) : (
-                topExperts.map((e) => (
-                  <div key={e.id} className="flex items-center gap-3">
-                    <div className="h-12 w-12 rounded-full bg-indigo-100 flex items-center justify-center font-bold text-indigo-700">
-                      {e.username ? e.username.charAt(0).toUpperCase() : 'U'}
-                    </div>
-
-                    <div>
-                      <p className="font-medium text-slate-900">{e.username}</p>
-
-                      <div className="flex gap-2 mt-1">
-                        {(e.topics || []).slice(0, 4).map((t: string) => (
-                          <span key={t} className="px-2 py-1 text-xs rounded-full bg-blue-100 text-blue-700">{t}</span>
-                        ))}
-                      </div>
-                    </div>
-                  </div>
-                ))
-              )}
-            </div>
-          </div>
-
-          <div className="bg-white rounded-2xl border border-slate-200 p-6 mt-6">
-            <h2 className="text-xl font-semibold mb-5">
-              Repository Activity
-            </h2>
-
-            <div className="space-y-5">
-              <div className="text-sm text-slate-500">Repository activity will appear here after ingestion is complete.</div>
-            </div>
-          </div>
+        <div className="col-span-4">
+          <TopExperts experts={topExperts} />
         </div>
 
+        <div className="col-span-8">
 
+          <div className="bg-white rounded-3xl p-6 border border-slate-200">
 
-        <div className="col-span-9">
-          <div className="bg-white rounded-2xl border border-slate-200 p-6 h-[700px]">
-            <div className="flex justify-between items-center mb-6">
-              <h2 className="text-2xl font-semibold">
-                Knowledge Graph
-              </h2>
+            <div className="flex justify-between mb-6 items-start">
 
-              <button className="text-sm text-slate-500">
-                Expand
-              </button>
+              <div>
+                <div className="flex items-center gap-3">
+                  <Share2
+                    size={28}
+                    className="text-violet-500"
+                  />
+
+                  <h2 className="text-3xl font-bold">
+                    Knowledge Graph
+                  </h2>
+                </div>
+
+                <p className="text-slate-500">
+                  Visualizing contributors,
+                  files and topics
+                </p>
+              </div>
+
+              <div className="flex items-center gap-6 text-sm">
+
+                <div className="flex items-center gap-2">
+                  <div className="h-3 w-3 rounded-full bg-black" />
+                  Repository
+                </div>
+
+                <div className="flex items-center gap-2">
+                  <div className="h-3 w-3 rounded-full bg-violet-500" />
+                  File
+                </div>
+
+                <div className="flex items-center gap-2">
+                  <div className="h-3 w-3 rounded-full bg-teal-500" />
+                  Contributor
+                </div>
+
+                <div className="flex items-center gap-2">
+                  <div className="h-3 w-3 rounded-full bg-blue-500" />
+                  Topic
+                </div>
+
+              </div>
+
+              {/* <select
+                className="
+                border
+                rounded-xl
+                px-4
+                py-2
+                text-sm
+                bg-white
+                "
+              >
+                <option>
+                  Top 25 Contributors
+                </option>
+              </select> */}
+
+              <select
+                value={maxContributors}
+                onChange={(e) =>
+                  setMaxContributors(Number(e.target.value))
+                }
+              >
+                <option value={25}>Top 25</option>
+                <option value={50}>Top 50</option>
+                <option value={999}>All</option>
+              </select>
+
             </div>
 
-            <div>
-              {/* Graph visualization */}
-              {typeof window !== 'undefined' && (
-                (() => {
-                  const repoId = Number(localStorage.getItem('selected_repo_id')) || null;
-                  if (!repoId) {
-                    return (
-                      <div className="h-[600px] rounded-xl border-2 border-dashed border-slate-200 flex items-center justify-center">
-                        <p className="text-slate-400">No repository selected</p>
-                      </div>
-                    );
-                  }
+            {repoId && (
+              <GraphView repoId={repoId} maxContributors={maxContributors} />
+            )}
 
-                  // Lazy loaded client-only GraphView
-                  return <GraphView repoId={repoId} />;
-                })()
-              )}
-            </div>
+            <AskAI />
+
           </div>
+
         </div>
 
       </div>

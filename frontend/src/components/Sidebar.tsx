@@ -7,8 +7,7 @@ import {
   LayoutDashboard,
   FolderGit2,
   Users,
-  Network,
-  Bot,
+  Rocket,
 } from "lucide-react";
 
 const items = [
@@ -33,17 +32,18 @@ export default function Sidebar() {
   const pathname = usePathname();
 
   return (
-    <aside className="w-64 min-h-screen bg-slate-950 border-r border-slate-800">
-      <div className="p-6">
-        <h1 className="text-2xl font-bold text-white">
+    <aside className="w-[260px] min-h-screen bg-gradient-to-b from-[#020617] to-[#0f172a] text-white flex flex-col">
+
+      <div className="px-8 py-8">
+        <h1 className="text-5xl font-bold flex items-center gap-2">
           OSSify
+          <Rocket className="text-violet-400" />
         </h1>
       </div>
 
-      <nav className="px-3 space-y-2">
+      <nav className="px-4 space-y-3">
         {items.map((item) => {
           const Icon = item.icon;
-
           const active = pathname === item.href;
 
           return (
@@ -51,17 +51,18 @@ export default function Sidebar() {
               key={item.name}
               href={item.href}
               className={`
-                flex items-center gap-3
-                rounded-xl px-4 py-2 transition
+                flex items-center gap-4
+                px-5 py-4 rounded-2xl
+                transition-all
                 ${
                   active
-                    ? "bg-slate-800 text-white"
-                    : "text-slate-400 hover:bg-slate-900 hover:text-white"
+                    ? "bg-white/10 text-white"
+                    : "text-slate-300 hover:bg-white/5"
                 }
               `}
             >
-              <Icon size={18} />
-              {item.name}
+              <Icon size={20} />
+              <span className="text-xl">{item.name}</span>
             </Link>
           );
         })}
