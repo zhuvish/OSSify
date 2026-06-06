@@ -247,6 +247,7 @@ def list_repositories():
 
     finally:
         db.close()
+
 @router.get("/repositories/{repo_id}/top-experts")
 def top_experts(repo_id: int):
     db = SessionLocal()
@@ -286,6 +287,7 @@ def top_experts(repo_id: int):
             # get username
             contributor = db.query(Contributor).filter_by(id=contributor_id).first()
             username = contributor.username if contributor else str(contributor_id)
+            avatar_url = contributor.avatar_url if contributor else str(contributor_id)
 
             top_topics = sorted(domain_scores.items(), key=lambda x: x[1], reverse=True)[:5]
             top_topics = [t[0] for t in top_topics]
@@ -293,6 +295,7 @@ def top_experts(repo_id: int):
             results.append({
                 "id": contributor_id,
                 "username": username,
+                "avatar_url": avatar_url,
                 "score": round(total_score, 2),
                 "topics": top_topics
             })
