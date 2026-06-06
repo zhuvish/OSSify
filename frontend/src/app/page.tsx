@@ -25,6 +25,11 @@ export default function Home() {
         result.repo_name
       );
 
+      if (result.cached) {
+        router.push("/dashboard");
+        return;
+      }
+
       router.push("/loading");
     } catch (error) {
       if (error instanceof Error) {
