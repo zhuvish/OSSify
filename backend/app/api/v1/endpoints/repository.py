@@ -190,7 +190,7 @@ def repository_status(repo_id: int):
     try:
         row = db.execute(
             text("""
-                SELECT id, full_name, status
+                SELECT id, full_name, status, processing_stage
                 FROM repositories
                 WHERE id = :repo_id
                 LIMIT 1
@@ -204,7 +204,10 @@ def repository_status(repo_id: int):
         # Normalize status
         status = row.status or "ready"
 
-        return {"status": status}
+        return {
+            "status": status,
+            "stage": row.processing_stage
+        }
 
     finally:
         db.close()

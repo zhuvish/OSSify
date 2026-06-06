@@ -40,19 +40,24 @@ def process_repository(repo_url: str):
 
         print("Saving repository...")
         repo_id = save_repository(repo_data)
+        update_stage(repo_id, "fetching_metadata")
 
         print("Saving contributors...")
+        update_stage(repo_id, "fetching_contributors")
         save_contributors(contributors)
 
         print("Fetching PRs...")
+        update_stage(repo_id, "fetching_prs")
         prs = fetch_prs(repo_name)
         save_prs(prs, repo_id)
 
         print("Fetching issues...")
+        update_stage(repo_id, "fetching_issues")
         issues = fetch_issues(repo_name)
         save_issues(issues, repo_id)
 
         print("Computing lightweight expertise...")
+        update_stage(repo_id, "computing_expertise")
         compute_lightweight_expertise()
 
         print("Selecting active contributors for deep analysis...")
@@ -105,9 +110,11 @@ def process_repository(repo_url: str):
         compute_expertise()
 
         print("Building Neo4j graph...")
+        update_stage(repo_id, "building_graph")
         build_graph(repo_id)
 
         print("Indexing documents into Qdrant...")
+        update_stage(repo_id, "building_embeddings")
         index_documents(
             os.getenv("DATABASE_URL")
         )
@@ -119,3 +126,21 @@ def process_repository(repo_url: str):
         print(str(e))
         # Re-raise so callers (background wrapper) can detect failure and mark status appropriately
         raise
+
+def update_stage(repo_id, stage):
+    db = SessionLocal()
+    try:
+        db.execute(
+            text("""
+                UPDATE repositories
+                SET processing_stage = :stage
+                WHERE id = :repo_id
+            """),
+            {
+                "repo_id": repo_id,
+                "stage": stage
+            }
+        )
+        db.commit()
+    finally:
+        db.close()
