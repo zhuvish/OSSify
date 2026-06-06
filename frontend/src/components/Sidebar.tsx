@@ -35,7 +35,7 @@ export default function Sidebar() {
     <aside className="w-[260px] min-h-screen bg-gradient-to-b from-[#020617] to-[#0f172a] text-white flex flex-col">
 
       <div className="px-8 py-8">
-        <h1 className="text-5xl font-bold flex items-center gap-2">
+        <h1 className="text-2xl font-bold flex items-center gap-2">
           OSSify
           <Rocket className="text-violet-400" />
         </h1>
@@ -52,7 +52,7 @@ export default function Sidebar() {
               href={item.href}
               className={`
                 flex items-center gap-4
-                px-5 py-4 rounded-2xl
+                px-5 py-3 rounded-2xl
                 transition-all
                 ${
                   active
@@ -62,7 +62,7 @@ export default function Sidebar() {
               `}
             >
               <Icon size={20} />
-              <span className="text-xl">{item.name}</span>
+              <span className="text-md">{item.name}</span>
             </Link>
           );
         })}

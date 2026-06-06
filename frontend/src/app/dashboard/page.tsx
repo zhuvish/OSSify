@@ -75,81 +75,88 @@ export default function DashboardPage() {
   return (
     <div>
 
-      <div className="flex justify-end gap-4 mb-4">
+      <div className="bg-gradient-to-r from-blue-500 via-indigo-600 to-violet-600 px-6 py-8 rounded-2xl ml-6 mr-6 mb-8">
 
-              <div className="bg-white px-5 py-3 rounded-2xl shadow-sm flex items-center gap-2">
-        <FileText size={18} />
-        <span>{stats.repositories} Repository</span>
-      </div>
+        <div className="flex justify-between items-start mb-8">
 
-      <div className="bg-white px-5 py-3 rounded-2xl shadow-sm flex items-center gap-2">
-        <Users size={18} />
-        <span>{stats.contributors} Contributors</span>
-      </div>
+          <div>
+            <h1 className="text-2xl font-bold text-white">
+              OSSify 🚀
+            </h1>
 
-      <div className="bg-white px-5 py-3 rounded-2xl shadow-sm flex items-center gap-2">
-        <Calendar size={18} />
-        <span>
-          {stats.last_updated
-            ? new Date(stats.last_updated).toLocaleDateString()
-            : ""}
-        </span>
-      </div>
+            <p className="text-white/80 mt-2">
+              Here's everything about {repoName}
+            </p>
+          </div>
 
-      </div>
+          <div className="flex gap-3">
+            <div className="bg-black/30 text-white px-3 py-1 rounded-2xl shadow-sm flex items-center gap-2">
+              <FileText size={18} />
+              <span className="text-sm">{stats.repositories} Repository</span>
+            </div>
 
-      <div className="bg-gradient-to-r from-blue-600 via-indigo-600 to-violet-600 rounded-[32px] px-10 py-12 mb-8">
+            <div className="bg-black/30 text-white px-3 py-1 rounded-2xl shadow-sm flex items-center gap-2">
+              <Users size={18} />
+              <span className="text-sm">{stats.contributors} Contributors</span>
+            </div>
 
-        <h1 className="text-6xl font-bold text-white">
-          OSSify 🚀 {repoName}
-        </h1>
+            <div className="bg-black/30 text-white px-3 py-1 rounded-2xl shadow-sm flex items-center gap-2">
+              <Calendar size={18} />
+              <span className="text-sm">
+                {stats.last_updated
+                  ? new Date(stats.last_updated).toLocaleDateString()
+                  : ""}
+              </span>
+            </div>
+          </div>
+        </div>
 
-        {/* <p className="text-white/80 mt-2 mb-8 text-lg"> */}
-        <p className="text-white/90 mt-3 mb-10 text-xl">
-          Discover expertise, contributor
-          networks and repository knowledge.
-        </p>
 
-        <div className="grid grid-cols-4 gap-6">
+        <div className="grid grid-cols-4 gap-4">
 
           <StatCard
             icon={FolderGit2}
             value={stats.repositories}
             title="Repositories"
-            subtitle="Tracked Repository"
+            iconBg="bg-violet-100"
+            iconColor="text-violet-600"
           />
 
           <StatCard
             icon={Users}
             value={stats.contributors}
             title="Contributors"
-            subtitle="Active Contributors"
+            iconBg="bg-blue-100"
+            iconColor="text-blue-600"
           />
 
           <StatCard
             icon={FileText}
             value={stats.files}
             title="Files"
-            subtitle="In Repository"
+            iconBg="bg-emerald-100"
+            iconColor="text-emerald-600"
           />
 
           <StatCard
             icon={Tags}
             value={stats.topics}
             title="Topics"
-            subtitle="Detected Topics"
+            iconBg="bg-yellow-100"
+            iconColor="text-yellow-600"
           />
 
         </div>
       </div>
 
-      <div className="grid grid-cols-12 gap-6">
+      <div className="grid grid-cols-16 gap-4">
 
-        <div className="col-span-4">
+        <div className="col-span-5">
           <TopExperts experts={topExperts} />
+          {/* <RepositorySummary /> */}
         </div>
 
-        <div className="col-span-8">
+        <div className="col-span-11 h-[650px]">
 
           <div className="bg-white rounded-3xl p-6 border border-slate-200">
 

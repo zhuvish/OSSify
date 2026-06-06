@@ -4,35 +4,34 @@ interface Props {
   icon: LucideIcon;
   value: number;
   title: string;
-  subtitle: string;
+  iconBg: string;
+  iconColor: string;
 }
 
 export default function StatCard({
   icon: Icon,
   value,
   title,
-  subtitle,
+  iconBg,
+  iconColor
 }: Props) {
   return (
-    <div className="bg-white rounded-3xl p-6 shadow-sm">
+    <div className="bg-white rounded-xl px-4 py-2 shadow-sm">
 
-      <div className="flex items-center gap-4">
+      <div className="flex items-center gap-3">
 
-        <div className="h-16 w-16 rounded-full bg-slate-100 flex items-center justify-center">
-          <Icon size={28} />
+        <div className="w-10 h-10 rounded-full bg-slate-100 flex items-center justify-center ${iconBg}">
+          <Icon size={24} strokeWidth={1.8}
+          className={iconColor}/>
         </div>
 
         <div>
-          <h3 className="text-5xl font-bold">
+          <h3 className="text-xl font-bold">
             {value}
           </h3>
 
-          <p className="font-medium">
+          <p className="text-md text-slate-500">
             {title}
-          </p>
-
-          <p className="text-sm text-slate-500">
-            {subtitle}
           </p>
         </div>
 

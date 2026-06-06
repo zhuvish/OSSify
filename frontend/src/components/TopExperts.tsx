@@ -8,81 +8,96 @@ export default function TopExperts({
   experts,
 }: Props) {
   return (
-    <div className="bg-white rounded-3xl p-6 border border-slate-200">
+    <div className="bg-white rounded-2xl p-5 border border-slate-200 shadow-sm ml-6">
 
-      {/* <h2 className="text-3xl font-bold mb-2">
-        Top Experts
-      </h2> */}
+      <div className="flex justify-between items-center mb-4">
 
-      <div className="flex items-center gap-3 mb-2">
-        <Crown className="text-violet-500" />
-        <h2 className="text-3xl font-bold">
-            Top Experts
-        </h2>
+        <div className="flex items-center gap-2">
+          <Crown
+            size={24}
+            strokeWidth={1.5}
+            className="text-violet-500"
+          />
+
+          <h2 className="text-lg font-semibold">
+            Top Contributors
+          </h2>
+        </div>
+
+        <button
+          className="
+      text-xs
+      text-violet-600
+      hover:text-violet-700
+    "
+        >
+          View all →
+        </button>
+
       </div>
 
-      <p className="text-slate-500 mb-6">
-        Top contributors by expertise
-      </p>
-
-      <div className="space-y-5">
+      <div className="space-y-3">
 
         {experts.map((expert, index) => (
           <div
             key={expert.id}
-            className="border rounded-2xl p-5 shadow-sm hover:shadow-md transition"
+            className="
+      flex items-center justify-between
+      py-3
+      border-b border-slate-100
+      last:border-b-0
+    "
           >
-            <div className="flex justify-between">
+            <div className="flex items-center gap-3">
 
-              <div className="flex gap-4">
-
-                <div className="h-12 w-12 rounded-full bg-violet-100 text-violet-700 flex items-center justify-center font-bold">
+              {expert.avatar_url ? (
+                <img
+                  src={expert.avatar_url}
+                  alt={expert.username}
+                  className="w-12 h-12 rounded-full object-cover"
+                />
+              ) : (
+                <div className="w-12 h-12 rounded-full bg-indigo-100 text-indigo-700 flex items-center justify-center font-bold">
                   {expert.username[0]?.toUpperCase()}
                 </div>
+              )}
 
-                <div>
-                  <div className="flex items-center gap-2">
-                    <p className="font-semibold">
-                      {expert.username}
-                    </p>
-                    <span className="text-xs text-slate-500">#{index + 1}</span>
-                  </div>
+              <div>
+                <p className="font-medium text-sm">
+                  {expert.username.toLowerCase()}
+                </p>
 
-                  <div className="flex flex-wrap gap-2 mt-2">
-                    {(expert.topics || [])
-                      .slice(0, 2)
-                      .map((topic: string) => (
-                        <span
-                          key={topic}
-                          className="px-2 py-1 rounded-full bg-blue-100 text-blue-700 text-xs"
-                        >
-                          {topic}
-                        </span>
-                      ))}
-                  </div>
-                </div>
-
-              </div>
-
-              <div className="text-right">
-                <div className="text-2xl font-bold">
-                  {Math.round(expert.score)}
-                </div>
-
-                <div className="text-xs text-slate-500">
-                  Expertise Score
+                <div className="flex gap-2 mt-1">
+                  {(expert.topics || [])
+                    .slice(0, 2)
+                    .map((topic: string) => (
+                      <span
+                        key={topic}
+                        className="
+                        px-2 py-0.5
+                        text-[10px]
+                        rounded-full
+                        bg-violet-50
+                        text-violet-700
+                        border border-violet-100
+                      "
+                      >
+                        {topic}
+                      </span>
+                    ))}
                 </div>
               </div>
 
             </div>
 
-            <div className="mt-4 h-2 rounded-full bg-slate-100">
-              <div
-                className="h-2 rounded-full bg-violet-500"
-                style={{
-                  width: `${Math.min(expert.score, 100)}%`,
-                }}
-              />
+            <div className="text-right">
+              <p className="font-semibold">
+                {Math.round(expert.score)}
+              </p>
+
+              <p className="text-xs text-slate-400">
+                #{index + 1}
+              </p>
             </div>
           </div>
         ))}
