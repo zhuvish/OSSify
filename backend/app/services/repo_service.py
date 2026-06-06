@@ -1,3 +1,5 @@
+import os
+from sqlalchemy import text
 from data_pipeline.extract.fetch_repos import fetch_repo
 from data_pipeline.extract.fetch_prs import fetch_prs
 from data_pipeline.extract.fetch_issues import fetch_issues
@@ -21,6 +23,8 @@ from data_pipeline.load.load_postgres import (
 
 from backend.app.services.lightweight_expertise_service import compute_lightweight_expertise
 from backend.app.services.expertise_service import compute_expertise
+from rag_pipeline.indexing.index_contributor_documents import index_documents
+from graph.builders.build_graph import build_graph
 
 def process_repository(repo_url: str):
     try:
@@ -99,6 +103,14 @@ def process_repository(repo_url: str):
         
         print("Computing deep expertise...")
         compute_expertise()
+
+        print("Building Neo4j graph...")
+        build_graph(repo_id)
+
+        print("Indexing documents into Qdrant...")
+        index_documents(
+            os.getenv("DATABASE_URL")
+        )
 
         print("========== PROCESS COMPLETE ==========")
 

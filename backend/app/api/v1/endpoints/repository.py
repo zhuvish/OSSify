@@ -4,6 +4,8 @@ from sqlalchemy import text
 
 from backend.app.db.postgres import SessionLocal
 from backend.app.services.repo_service import process_repository
+from backend.app.services.graph_service import GraphService
+from rag_pipeline.vector_store.qdrant_client import QdrantVectorStore
 from data_pipeline.utils.repo_parser import parse_github_url
 from backend.app.models.repository import Repository
 import threading
@@ -39,8 +41,23 @@ def analyze_repo(request: RepoRequest):
             {"repo_name": repo_name}
         ).first()
 
-        # Repository already processed
-        if existing_repo:
+        postgres_exists = existing_repo is not None
+
+        graph = GraphService()
+        neo4j_exists = graph.repository_exists(repo_name)
+        graph.close()
+
+        qdrant = QdrantVectorStore(default_collection="repo_documents")
+        qdrant_exists = qdrant.repository_exists(repo_name)
+
+        needs_processing = not (
+            postgres_exists
+            and neo4j_exists
+            and qdrant_exists
+        )
+
+        if not needs_processing:
+
             return {
                 "status": "success",
                 "repo_id": existing_repo.id,
@@ -50,32 +67,60 @@ def analyze_repo(request: RepoRequest):
             }
 
         # If not exists, create placeholder repository row with processing status
-        insert = db.execute(
-            text("""
-                INSERT INTO repositories (name, owner, full_name, url, status)
-                VALUES (:name, :owner, :full_name, :url, :status)
-            """),
-            {
-                "name": repo_name.split('/')[-1],
-                "owner": repo_name.split('/')[0],
-                "full_name": repo_name,
-                "url": repo_url,
-                "status": "processing"
-            }
-        )
-        db.commit()
+        if postgres_exists:
+            repo_id = existing_repo.id
 
-        created = db.execute(
-            text("""
-                SELECT id, full_name
-                FROM repositories
-                WHERE full_name = :repo_name
-                LIMIT 1
-            """),
-            {"repo_name": repo_name}
-        ).first()
+            # mark existing repo as processing again
+            db.execute(
+                text("""
+                    UPDATE repositories
+                    SET status = 'processing'
+                    WHERE id = :repo_id
+                """),
+                {"repo_id": repo_id}
+            )
+            db.commit()
 
-        repo_id = created.id if created else None
+        else:
+            db.execute(
+                text("""
+                    INSERT INTO repositories (
+                        name,
+                        owner,
+                        full_name,
+                        url,
+                        status
+                    )
+                    VALUES (
+                        :name,
+                        :owner,
+                        :full_name,
+                        :url,
+                        :status
+                    )
+                """),
+                {
+                    "name": repo_name.split("/")[-1],
+                    "owner": repo_name.split("/")[0],
+                    "full_name": repo_name,
+                    "url": repo_url,
+                    "status": "processing"
+                }
+            )
+
+            db.commit()
+
+            created = db.execute(
+                text("""
+                    SELECT id, full_name
+                    FROM repositories
+                    WHERE full_name = :repo_name
+                    LIMIT 1
+                """),
+                {"repo_name": repo_name}
+            ).first()
+
+            repo_id = created.id
 
     finally:
         db.close()
