@@ -325,3 +325,33 @@ class GraphService:
                 links.append({"source": n1, "target": n2, "type": "co_worked"})
 
         return {"nodes": list(nodes.values()), "links": links}
+
+    def repository_exists(self, repo_name):
+        query = """
+        MATCH (r:Repository {name:$repo_name})
+        RETURN count(r) > 0 AS exists
+        """
+
+        with self.driver.session() as session:
+            result = session.run(
+                query,
+                repo_name=repo_name
+            ).single()
+
+            return bool(result["exists"])
+
+    def delete_repository_graph(self, repo_id: int):
+        query = """
+        MATCH (n)
+        WHERE
+            (n:Contributor AND n.repo_id = $repo_id)
+            OR
+            (n:File AND n.repo_id = $repo_id)
+            OR
+            (n:Repository AND n.id = $repo_id)
+
+        DETACH DELETE n
+        """
+
+        with self.driver.session() as session:
+            session.run(query, repo_id=repo_id)

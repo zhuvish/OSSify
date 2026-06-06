@@ -21,11 +21,13 @@ TOPIC_RULES = {
     "sql": "Database",
 }
 
-def build_graph():
+def build_graph(repo_id: int):
 
     db = SessionLocal()
 
     graph = GraphService()
+    print(f"Clearing existing graph for repo {repo_id}...")
+    graph.delete_repository_graph(repo_id)
 
     query = """
     SELECT
@@ -47,9 +49,10 @@ def build_graph():
         ON c.repo_id = r.id
 
     WHERE c.contributor_id IS NOT NULL
+    AND c.repo_id = :repo_id
     """
 
-    rows = db.execute(text(query)).fetchall()
+    rows = db.execute(text(query), {"repo_id": repo_id}).fetchall()
 
     print(f"Fetched {len(rows)} rows from PostgreSQL")
 
@@ -137,9 +140,10 @@ def build_graph():
         AND c2.contributor_id IS NOT NULL
         AND c1.contributor_id != c2.contributor_id
         AND c1.repo_id = c2.repo_id
+        AND c1.repo_id = :repo_id
     """
 
-    collab_rows = db.execute(text(collab_query)).fetchall()
+    collab_rows = db.execute(text(collab_query), {"repo_id": repo_id}).fetchall()
 
     print(f"Found {len(collab_rows)} collaboration rows")
 
