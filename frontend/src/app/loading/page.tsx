@@ -11,6 +11,7 @@ export default function LoadingPage() {
   const [repoId, setRepoId] = useState<number | null>(null);
   const [status, setStatus] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [stage, setStage] = useState<string | null>(null);
 
   useEffect(() => {
     const q = search?.get("repo_id");
@@ -25,6 +26,16 @@ export default function LoadingPage() {
     }
   }, [search]);
 
+  const stages = [
+    "fetching_metadata",
+    "fetching_contributors",
+    "fetching_prs",
+    "fetching_issues",
+    "computing_expertise",
+    "building_graph",
+    "building_embeddings",
+  ];
+
   useEffect(() => {
     if (!repoId) return;
 
@@ -36,6 +47,7 @@ export default function LoadingPage() {
         if (!mounted) return;
 
         setStatus(res.status);
+        setStage(res.stage);
 
         if (
           res.status === "ready" ||
@@ -63,11 +75,49 @@ export default function LoadingPage() {
     };
   }, [repoId, router]);
 
-  function stepIcon() {
-    if (status === "ready") return "✓";
-    if (status === "failed") return "✕";
-    return "...";
+  function getStepStatus(step: string) {
+    if (status === "failed") return "failed";
+    if (status === "ready") return "done";
+
+    const current = stages.indexOf(stage || "");
+    const target = stages.indexOf(step);
+
+    if (target < current) return "done";
+    if (target === current) return "active";
+
+    return "pending";
   }
+
+  const steps = [
+    {
+      title: "Fetching Repository Metadata",
+      stage: "fetching_metadata",
+    },
+    {
+      title: "Fetching Contributors",
+      stage: "fetching_contributors",
+    },
+    {
+      title: "Fetching PRs",
+      stage: "fetching_prs",
+    },
+    {
+      title: "Fetching Issues",
+      stage: "fetching_issues",
+    },
+    {
+      title: "Computing Expertise",
+      stage: "computing_expertise",
+    },
+    {
+      title: "Building Knowledge Graph",
+      stage: "building_graph",
+    },
+    {
+      title: "Generating Embeddings",
+      stage: "building_embeddings",
+    },
+  ];
 
   return (
     <main className="min-h-screen flex items-center justify-center bg-slate-100">
@@ -79,17 +129,47 @@ export default function LoadingPage() {
         </p>
 
         <div className="space-y-3">
-          {["Fetching Repository Data","Loading PostgreSQL","Building Knowledge Graph","Generating Embeddings","Building Contributor Profiles"].map((title, i) => (
-            <div key={i} className="flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                <span className="w-8 h-8 flex items-center justify-center rounded-full bg-slate-100">{stepIcon()}</span>
-                <div>
-                  <div className="font-medium">{title}</div>
+          {steps.map((step) => {
+            const state = getStepStatus(step.stage);
+
+            return (
+              <div
+                key={step.stage}
+                className="flex items-center justify-between"
+              >
+                <div className="flex items-center gap-3">
+
+                  <span className="w-8 h-8 flex items-center justify-center rounded-full bg-slate-100">
+
+                    {state === "done" && "✓"}
+
+                    {state === "active" && "⏳"}
+
+                    {state === "pending" && "..."}
+
+                    {state === "failed" && "✕"}
+
+                  </span>
+
+                  <div>
+                    <div className="font-medium">
+                      {step.title}
+                    </div>
+                  </div>
+                </div>
+
+                <div className="text-sm text-slate-400">
+                  {state === "done" && "Done"}
+
+                  {state === "active" && "In Progress"}
+
+                  {state === "pending" && "Pending"}
+
+                  {state === "failed" && "Failed"}
                 </div>
               </div>
-              <div className="text-sm text-slate-400">{status === "ready" ? "Done" : status === "failed" ? "Failed" : i === 0 ? "Starting" : "Pending"}</div>
-            </div>
-          ))}
+            );
+          })}
         </div>
 
         {error && (
