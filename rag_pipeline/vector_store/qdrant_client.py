@@ -181,5 +181,26 @@ class QdrantVectorStore:
         cname = collection_name or self.collection
         self._client.delete_collection(collection_name=cname)
 
+    def repository_exists(self, repo_name):
+        try:
+            result = self._client.scroll(
+                collection_name=self.collection,
+                limit=1,
+                scroll_filter=q_models.Filter(
+                    must=[
+                        q_models.FieldCondition(
+                            key="repo",
+                            match=q_models.MatchValue(
+                                value=repo_name
+                            )
+                        )
+                    ]
+                )
+            )
+
+            return len(result[0]) > 0
+
+        except Exception:
+            return False
 
 __all__ = ["QdrantVectorStore"]
