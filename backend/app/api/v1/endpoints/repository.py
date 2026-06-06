@@ -48,7 +48,15 @@ def analyze_repo(request: RepoRequest):
         graph.close()
 
         qdrant = QdrantVectorStore(default_collection="repo_documents")
-        qdrant_exists = qdrant.repository_exists(repo_name)
+        qdrant_exists = (
+            postgres_exists
+            and qdrant.repository_exists(existing_repo.id)
+        )
+
+        print(f"Postgres exists: {postgres_exists}")
+        print(f"Neo4j exists: {neo4j_exists}")
+        print(f"Qdrant exists: {qdrant_exists}")
+        print(type(qdrant))
 
         needs_processing = not (
             postgres_exists
