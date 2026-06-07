@@ -100,11 +100,14 @@ export async function askExperts(question: string) {
   }
 }
 
-export async function searchExperts(query: string) {
+export async function searchExperts(query: string, repoId?: number) {
   try {
-    const response = await fetch(
-      `${API_URL}/experts/search?query=${encodeURIComponent(query)}`
-    );
+    let url = `${API_URL}/experts/search?query=${encodeURIComponent(query)}`;
+    if (repoId !== undefined) {
+      url += `&repo_id=${repoId}`;
+    }
+
+    const response = await fetch(url);
 
     if (!response.ok) {
       throw new Error(`Backend returned ${response.status}`);
