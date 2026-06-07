@@ -7,6 +7,7 @@ import {
   LayoutDashboard,
   FolderGit2,
   Users,
+  PlusCircle,
   Rocket,
 } from "lucide-react";
 
@@ -20,6 +21,11 @@ const items = [
     name: "Repositories",
     href: "/repositories",
     icon: FolderGit2,
+  },
+  {
+    name: "Add Repository",
+    href: "/",
+    icon: PlusCircle,
   },
   {
     name: "Contributors",
