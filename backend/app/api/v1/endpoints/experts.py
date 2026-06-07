@@ -20,6 +20,7 @@ from backend.app.services.expert_retrieval_service import (
 )
 from backend.app.services.voice_chat_service import voice_chat_with_contributor
 from backend.app.services.tts_service import generate_speech, TTSException
+from backend.app.services.ask_experts_service import ask_experts
 
 logger = logging.getLogger(__name__)
 router = APIRouter()
@@ -51,6 +52,16 @@ class ExpertSearchResponse(BaseModel):
     query: str
     experts: List[ExpertResult]
     count: int
+
+
+class AskExpertsRequest(BaseModel):
+    question: str = Field(..., description="Natural language question about expert contributors", min_length=1)
+
+
+class AskExpertsResponse(BaseModel):
+    summary: str
+    relevant_information: List[str]
+    answer: str
 
 
 class RecentActivity(BaseModel):
@@ -434,3 +445,51 @@ def voice_chat_audio_with_contributor_endpoint(
     except Exception as exc:
         logger.exception("Voice chat audio failed for contributor_id=%d", contributor_id)
         raise HTTPException(status_code=500, detail=f"Voice chat audio error: {exc}")
+
+
+# ──────────────────────────────────────────────
+#  6. Expert Q&A API (Ask Question)
+# ──────────────────────────────────────────────
+
+
+@router.post("/experts/ask", response_model=AskExpertsResponse)
+def ask_experts_question(
+    body: AskExpertsRequest,
+    top_k: int = Query(
+        default=5,
+        ge=1,
+        le=20,
+        description="Number of top experts to consider for the answer",
+    ),
+):
+    """Answer a natural language question about expert contributors.
+
+    This endpoint uses the existing expert retrieval pipeline (find_experts)
+    combined with the existing Groq LLM to produce a structured, grounded answer.
+
+    **Request body:**\n
+    ```json
+    {"question": "Who should review backend API changes?"}
+    ```
+
+    **Response:**
+    - `summary`: Brief overview of findings
+    - `relevant_information`: Specific facts about matched experts
+    - `answer`: Final grounded answer
+
+    **Guarantees:**
+    - Answer is grounded in retrieved expert data
+    - No hallucinated contributors
+    - Uses existing find_experts() + Groq LLM infrastructure
+    """
+    logger.info("Expert Q&A: question='%s' top_k=%d", body.question[:80], top_k)
+    try:
+        result = ask_experts(question=body.question, top_k=top_k)
+        return AskExpertsResponse(
+            summary=result["summary"],
+            relevant_information=result["relevant_information"],
+            answer=result["answer"],
+        )
+    except Exception as exc:
+        logger.exception("Expert Q&A failed for question='%s'", body.question[:80])
+        raise HTTPException(status_code=500, detail=f"Expert Q&A error: {exc}")
