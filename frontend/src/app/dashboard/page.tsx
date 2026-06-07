@@ -155,94 +155,74 @@ export default function DashboardPage() {
           {/* <RepositorySummary /> */}
         </div>
 
-        <div className="col-span-11 h-[650px]">
+        <div className="col-span-11 mr-5">
+          <div className="bg-white rounded-3xl p-5 border border-slate-200">
+            <div className="mb-6">
+              <div className="flex items-center justify-between mb-4">
+                <div>
+                  <div className="flex items-center gap-3">
+                    <Share2
+                      size={24}
+                      strokeWidth={1.5}
+                      className="text-violet-500"
+                    />
 
-          <div className="bg-white rounded-3xl p-6 border border-slate-200">
+                    <h2 className="text-lg font-bold">
+                      Repository Knowledge Map
+                    </h2>
+                  </div>
 
-            <div className="flex justify-between mb-6 items-start">
+                  <p className="text-sm ml-10 text-slate-500 mt-1">
+                    Repository → Topics → Top Experts
+                  </p>
+                </div>
+                <div className="flex gap-4 text-sm text-slate-600">
 
-              <div>
-                <div className="flex items-center gap-3">
-                  <Share2
-                    size={28}
-                    className="text-violet-500"
-                  />
+                  <div className="flex items-center gap-2">
+                    <div className="h-3 w-3 rounded-full bg-slate-900" />
+                    Repository
+                  </div>
 
-                  <h2 className="text-3xl font-bold">
-                    Knowledge Graph
-                  </h2>
+                  <div className="flex items-center gap-2">
+                    <div className="h-3 w-3 rounded-full bg-blue-500" />
+                    Topic
+                  </div>
+
+                  <div className="flex items-center gap-2">
+                    <div className="h-3 w-3 rounded-full bg-emerald-500" />
+                    Expert
+                  </div>
+
                 </div>
 
-                <p className="text-slate-500">
-                  Visualizing contributors,
-                  files and topics
-                </p>
+                {/* <select
+                  value={maxContributors}
+                  onChange={(e) =>
+                    setMaxContributors(Number(e.target.value))
+                  }
+                  className="border border-slate-200 rounded-xl px-4 py-2 bg-white text-sm"
+                >
+                  <option value={25}>Top 25</option>
+                  <option value={50}>Top 50</option>
+                  <option value={999}>All</option>
+                </select> */}
               </div>
-
-              <div className="flex items-center gap-6 text-sm">
-
-                <div className="flex items-center gap-2">
-                  <div className="h-3 w-3 rounded-full bg-black" />
-                  Repository
-                </div>
-
-                <div className="flex items-center gap-2">
-                  <div className="h-3 w-3 rounded-full bg-violet-500" />
-                  File
-                </div>
-
-                <div className="flex items-center gap-2">
-                  <div className="h-3 w-3 rounded-full bg-teal-500" />
-                  Contributor
-                </div>
-
-                <div className="flex items-center gap-2">
-                  <div className="h-3 w-3 rounded-full bg-blue-500" />
-                  Topic
-                </div>
-
-              </div>
-
-              {/* <select
-                className="
-                border
-                rounded-xl
-                px-4
-                py-2
-                text-sm
-                bg-white
-                "
-              >
-                <option>
-                  Top 25 Contributors
-                </option>
-              </select> */}
-
-              <select
-                value={maxContributors}
-                onChange={(e) =>
-                  setMaxContributors(Number(e.target.value))
-                }
-              >
-                <option value={25}>Top 25</option>
-                <option value={50}>Top 50</option>
-                <option value={999}>All</option>
-              </select>
-
             </div>
 
-            {repoId && (
-              <GraphView repoId={repoId} maxContributors={maxContributors} />
-            )}
-
-            <AskAI />
-
+            <div className="mt-4">
+              {repoId && (
+                <GraphView
+                  repoId={repoId}
+                  maxContributors={maxContributors}
+                />
+              )}
+            </div>
           </div>
-
+          <div className="mt-6">
+            <AskAI />
+          </div>
         </div>
-
       </div>
-
     </div>
   );
 }

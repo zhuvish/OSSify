@@ -6,12 +6,13 @@ import RepositoryNode from "./graph/RepositoryNode";
 import TopicNode from "./graph/TopicNode";
 import ContributorNode from "./graph/ContributorNode";
 import ReactFlow, {
+  useReactFlow,
   Controls,
   Background,
+  useNodesInitialized,
 } from "reactflow";
 import "reactflow/dist/style.css";
 import { layout } from "@/src/lib/graphLayout";
-
 
 const nodeTypes = {
   repository: RepositoryNode,
@@ -118,18 +119,34 @@ export default function GraphView({ repoId, maxContributors = 25 }: { repoId: nu
     reactFlowEdges
   );
 
+  const handleInit = (instance: any) => {
+    const repoNode = positionedNodes.find(
+      (n) => n.type === "repository"
+    );
+
+    if (!repoNode) return;
+
+    instance.setCenter(
+      repoNode.position.x + 400,
+      repoNode.position.y + 50,
+      {
+        zoom: 0.65,
+        duration: 0,
+      }
+    );
+  };
+
   return (
-    <div className="h-[700px] w-full">
+    <div className="h-[500px] w-full rounded-2xl bg-slate-50 border border-slate-100">
       <ReactFlow
         nodes={positionedNodes}
         edges={reactFlowEdges}
         nodeTypes={nodeTypes}
-        fitView
+        onInit={handleInit}
 
         nodesDraggable={true}
         nodesConnectable={false}
         elementsSelectable={true}
-
         zoomOnScroll={true}
         zoomOnPinch={true}
         panOnDrag={true}
