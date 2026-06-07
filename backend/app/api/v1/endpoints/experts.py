@@ -156,6 +156,10 @@ def search_experts(
         le=20,
         description="Number of top experts to return",
     ),
+    repo_id: Optional[int] = Query(
+        default=None,
+        description="Filter experts by repository ID",
+    ),
 ):
     """Search for contributors who are experts in a given topic.
 
@@ -169,7 +173,7 @@ def search_experts(
     """
     logger.info("Expert search: query=%s top_k=%d", query, top_k)
     try:
-        experts = find_experts(query=query, top_k=top_k)
+        experts = find_experts(query=query, top_k=top_k, repo_id=repo_id)
         return ExpertSearchResponse(query=query, experts=experts, count=len(experts))
     except Exception as exc:
         logger.exception("Expert search failed for query=%s", query)
