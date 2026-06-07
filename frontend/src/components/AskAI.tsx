@@ -73,7 +73,8 @@ export default function AskAI() {
     setError(null);
     setResult(null);
     try {
-      const data = await searchExperts(q.trim());
+      const repoId = typeof window !== 'undefined' ? localStorage.getItem('selected_repo_id') : null;
+      const data = await searchExperts(q.trim(), repoId ? Number(repoId) : undefined);
       setResult(data);
     } catch (err) {
       setError(
