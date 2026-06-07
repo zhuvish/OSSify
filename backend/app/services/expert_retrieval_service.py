@@ -30,11 +30,12 @@ logger = logging.getLogger(__name__)
 # ──────────────────────────────────────────────
 
 
-def find_experts(query: str, top_k: int = 5) -> List[Dict[str, Any]]:
+def find_experts(query: str, top_k: int = 5, repo_id: Optional[int] = None) -> List[Dict[str, Any]]:
     """Find experts for a given query by aggregating semantically relevant documents.
 
     Pipeline:
       1. Semantic search across all Qdrant documents (top_k=100 raw for better recall)
+         If repo_id is provided, results are scoped to that repository only.
       2. Aggregate scores per contributor with document-type weighting
       3. Apply content-token matching bonus for documents whose content contains query terms
       4. Enrich from PostgreSQL: expertise areas, matched files, stats
@@ -49,7 +50,10 @@ def find_experts(query: str, top_k: int = 5) -> List[Dict[str, Any]]:
     """
     retriever = Retriever()
     # Increase raw recall for better expert discovery
-    results = retriever.search(query, top_k=100)
+    if repo_id is not None:
+        results = retriever.search_with_filter(query, top_k=100, repo_id=repo_id)
+    else:
+        results = retriever.search(query, top_k=100)
     db = SessionLocal()
 
     try:
