@@ -35,7 +35,6 @@ export default function DashboardPage() {
   const [maxContributors, setMaxContributors] = useState(25);
 
   useEffect(() => {
-    // Read selected repo info from localStorage after hydration
     if (typeof window === 'undefined') return;
 
     const name = localStorage.getItem("selected_repo_name");
