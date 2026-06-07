@@ -37,12 +37,11 @@ export default function LoadingPage() {
   ];
 
   useEffect(() => {
-    if (!repoId) return;
-
     let mounted = true;
 
     async function check() {
       try {
+        if (!repoId) return;
         const res = await getRepoStatus(repoId);
         if (!mounted) return;
 
