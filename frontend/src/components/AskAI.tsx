@@ -185,10 +185,30 @@ export default function AskAI() {
           type="button"
           data-ask-ai-toggle
           onClick={() => setOpen(!open)}
-          className="inline-flex items-center gap-2 rounded-full bg-violet-600 px-5 py-3 text-white shadow-2xl shadow-violet-500/25 transition hover:bg-violet-700 active:scale-95"
+          className="h-14 w-14 rounded-full bg-violet-600 text-white shadow-2xl shadow-violet-500/30 flex items-center justify-center transition hover:bg-violet-700 hover:shadow-violet-500/40 hover:scale-105 active:scale-95"
         >
-          {open ? <X size={18} /> : <MessageCircle size={18} />}
-          {open ? "Close" : "Ask AI"}
+          {open ? <X size={22} /> : (
+            <div className="relative">
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                width="22"
+                height="22"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              >
+                <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
+              </svg>
+              <Sparkles
+                size={10}
+                className="absolute -top-0.5 -right-0.5 text-amber-300"
+                strokeWidth={2.5}
+              />
+            </div>
+          )}
         </button>
       </div>
 
