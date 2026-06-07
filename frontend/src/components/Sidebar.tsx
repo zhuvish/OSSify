@@ -36,8 +36,7 @@ export default function Sidebar() {
 
       <div className="px-8 py-8">
         <h1 className="text-2xl font-bold flex items-center gap-2">
-          OSSify
-          <Rocket className="text-violet-400" />
+          OSSify 🚀
         </h1>
       </div>
 
