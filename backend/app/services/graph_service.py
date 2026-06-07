@@ -214,117 +214,111 @@ class GraphService:
         nodes = {}
         links = []
 
-        # Get repository node
         with self.driver.session() as session:
+
+            # --------------------------------------------------
+            # Repository node
+            # --------------------------------------------------
             repo_res = session.run(
-                "MATCH (r:Repository {id:$repo_id}) RETURN r.name AS name, r.id AS id",
+                """
+                MATCH (r:Repository {id:$repo_id})
+                RETURN r.id AS id, r.name AS name
+                """,
                 repo_id=repo_id
             ).single()
 
-            if repo_res:
-                rid = repo_res["id"]
-                rname = repo_res["name"]
-                nodes[f"repo_{rid}"] = {"id": f"repo_{rid}", "label": rname, "type": "repository"}
+            if not repo_res:
+                return {"nodes": [], "links": []}
 
-            # Contributor -> Topic edges
-            q1 = """
-            MATCH (c:Contributor {repo_id:$repo_id})-[e:EXPERT_IN]->(t:Topic)
-            RETURN c.id AS cid, c.username AS username, t.name AS topic
+            repo_node = f"repo_{repo_id}"
+
+            nodes[repo_node] = {
+                "id": repo_node,
+                "label": repo_res["name"],
+                "type": "repository"
+            }
+
+            # --------------------------------------------------
+            # Get Topics + Contributors
+            # --------------------------------------------------
+            q = """
+            MATCH (c:Contributor {repo_id:$repo_id})
+                -[:EXPERT_IN]->
+                (t:Topic)
+
+            RETURN
+                t.name AS topic,
+                c.id AS contributor_id,
+                c.username AS contributor_name
+
+            ORDER BY t.name, c.username
             """
-            for rec in session.run(q1, repo_id=repo_id):
-                cid = rec["cid"]
-                username = rec["username"]
+
+            results = session.run(q, repo_id=repo_id)
+
+            topic_map = {}
+
+            for rec in results:
                 topic = rec["topic"]
 
-                cnode = f"contributor_{cid}"
-                tnode = f"topic_{topic}"
+                if topic not in topic_map:
+                    topic_map[topic] = []
 
-                if cnode not in nodes:
-                    nodes[cnode] = {"id": cnode, "label": username or str(cid), "type": "contributor"}
-                if tnode not in nodes:
-                    nodes[tnode] = {"id": tnode, "label": topic, "type": "topic"}
-
-                links.append({"source": cnode, "target": tnode, "type": "expert_in"})
-
-            # Topic -> Repository edges: topics that appear in this repo
-            q2 = """
-            MATCH (t:Topic)
-            WHERE exists((:Contributor {repo_id:$repo_id})-[:EXPERT_IN]->(t))
-            RETURN t.name AS topic
-            """
-            for rec in session.run(q2, repo_id=repo_id):
-                topic = rec["topic"]
-                tnode = f"topic_{topic}"
-                if tnode in nodes and f"repo_{repo_id}" in nodes:
-                    links.append({"source": tnode, "target": f"repo_{repo_id}", "type": "topic_of"})
-
-            # Contributor -> File edges, limited to avoid overloading the graph
-            q_files = """
-            MATCH (c:Contributor {repo_id:$repo_id})-[:CONTRIBUTED_TO]->(f:File {repo_id:$repo_id})
-            WITH c, f
-            LIMIT 5
-            RETURN c.id AS cid, c.username AS username, f.path AS filepath
-            """
-            for rec in session.run(q_files, repo_id=repo_id):
-                cid = rec["cid"]
-                username = rec["username"]
-                filepath = rec["filepath"]
-
-                contributor_node = f"contributor_{cid}"
-                file_node = f"file_{filepath}"
-
-                if contributor_node not in nodes:
-                    nodes[contributor_node] = {
-                        "id": contributor_node,
-                        "label": username or str(cid),
-                        "type": "contributor"
-                    }
-
-                if file_node not in nodes:
-                    nodes[file_node] = {
-                        "id": file_node,
-                        "label": filepath.split("/")[-1],
-                        "type": "file"
-                    }
-
-                links.append({
-                    "source": contributor_node,
-                    "target": file_node,
-                    "type": "modified"
+                topic_map[topic].append({
+                    "id": rec["contributor_id"],
+                    "username": rec["contributor_name"]
                 })
 
-            # File -> Repository edges
-            q_repo_files = """
-            MATCH (f:File {repo_id:$repo_id})-[:PART_OF]->(r:Repository {id:$repo_id})
-            RETURN f.path AS filepath
-            """
-            for rec in session.run(q_repo_files, repo_id=repo_id):
-                filepath = rec["filepath"]
-                file_node = f"file_{filepath}"
-                if file_node in nodes and f"repo_{repo_id}" in nodes:
+            # --------------------------------------------------
+            # Limit topics
+            # --------------------------------------------------
+            selected_topics = sorted(topic_map.keys())[:10]
+
+            for topic in selected_topics:
+
+                topic_node = f"topic_{topic}"
+
+                nodes[topic_node] = {
+                    "id": topic_node,
+                    "label": topic,
+                    "type": "topic"
+                }
+
+                # Repository -> Topic
+                links.append({
+                    "source": repo_node,
+                    "target": topic_node,
+                    "type": "topic_of"
+                })
+
+                # --------------------------------------------------
+                # Top contributors for this topic
+                # --------------------------------------------------
+                contributors = topic_map[topic][:10]
+
+                for contributor in contributors:
+
+                    contributor_node = (
+                        f"contributor_{contributor['id']}"
+                    )
+
+                    if contributor_node not in nodes:
+                        nodes[contributor_node] = {
+                            "id": contributor_node,
+                            "label": contributor["username"],
+                            "type": "contributor"
+                        }
+
                     links.append({
-                        "source": file_node,
-                        "target": f"repo_{repo_id}",
-                        "type": "part_of"
+                        "source": topic_node,
+                        "target": contributor_node,
+                        "type": "expert_in"
                     })
 
-            # Co-work edges between contributors
-            q3 = """
-            MATCH (c1:Contributor {repo_id:$repo_id})-[co:CO_WORKED_WITH]-(c2:Contributor {repo_id:$repo_id})
-            RETURN c1.id AS c1, c2.id AS c2
-            """
-            for rec in session.run(q3, repo_id=repo_id):
-                c1 = rec["c1"]
-                c2 = rec["c2"]
-                n1 = f"contributor_{c1}"
-                n2 = f"contributor_{c2}"
-                if n1 not in nodes:
-                    nodes[n1] = {"id": n1, "label": str(c1), "type": "contributor"}
-                if n2 not in nodes:
-                    nodes[n2] = {"id": n2, "label": str(c2), "type": "contributor"}
-                links.append({"source": n1, "target": n2, "type": "co_worked"})
-
-        return {"nodes": list(nodes.values()), "links": links}
+        return {
+            "nodes": list(nodes.values()),
+            "links": links
+        }
 
     def repository_exists(self, repo_name):
         query = """
