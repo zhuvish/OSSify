@@ -108,7 +108,7 @@ def compute_lightweight_expertise():
             if pr.merged:
                 score += 5
 
-            contributor_scores[pr.user_id][domain] += score
+            contributor_scores[(pr.user_id, pr.repo_id)][domain] += score
 
     # Issue analysis
     issues = db.query(Issue).all()
@@ -122,19 +122,10 @@ def compute_lightweight_expertise():
         domains = classify_text(text)
 
         for domain in domains:
-            contributor_scores[issue.user_id][domain] += 5
-
-    # contribution bonus
-    contributors = db.query(Contributor).all()
-
-    for contributor in contributors:
-        bonus = min(contributor.contributions_count or 0, 50)
-
-        if bonus > 0:
-            contributor_scores[contributor.id]["activity"] += bonus
+            contributor_scores[(issue.user_id, issue.repo_id)][domain] += 5
 
     # save
-    for contributor_id, domains in contributor_scores.items():
+    for (contributor_id, repo_id), domains in contributor_scores.items():
         for domain, raw_score in domains.items():
 
             score = round(math.log1p(raw_score) * 15, 2)
@@ -142,6 +133,7 @@ def compute_lightweight_expertise():
             db.add(
                 ContributorExpertise(
                     contributor_id=contributor_id,
+                    repo_id=repo_id,
                     domain=domain,
                     score=score,
                     evidence_count=raw_score,

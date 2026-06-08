@@ -22,31 +22,33 @@ def compute_expertise():
     commits = db.query(Commit).all()
     commit_files = db.query(CommitFile).all()
 
-    commit_to_contributor = {}
+    commit_lookup = {}
 
     for commit in commits:
-        commit_to_contributor[commit.id] = commit.contributor_id
-
-    contributor_scores = defaultdict(lambda: defaultdict(int))
+        commit_lookup[commit.id] = {
+            "contributor_id": commit.contributor_id,
+            "repo_id": commit.repo_id,
+        }
 
     contributor_domain_files = defaultdict(
-    lambda: defaultdict(set)
-)
+        lambda: defaultdict(set)
+    )
 
     for file in commit_files:
-        contributor_id = commit_to_contributor.get(file.commit_id)
+        commit_info = commit_lookup.get(file.commit_id)
 
-        if not contributor_id:
+        if not commit_info:
             continue
+
+        contributor_id = commit_info["contributor_id"]
+        repo_id = commit_info["repo_id"]
 
         domains = classify_file(file.filename)
 
         for domain in domains:
-            contributor_domain_files[contributor_id][domain].add(
-                file.filename
-            )
+            contributor_domain_files[(contributor_id, repo_id)][domain].add(file.filename)
 
-    for contributor_id, domains in contributor_domain_files.items():
+    for (contributor_id, repo_id), domains in contributor_domain_files.items():
         for domain, files in domains.items():
 
             raw_score = len(files)
@@ -56,6 +58,7 @@ def compute_expertise():
             db.add(
                 ContributorExpertise(
                     contributor_id=contributor_id,
+                    repo_id=repo_id,
                     domain=domain,
                     score=score,
                     evidence_count=raw_score,
