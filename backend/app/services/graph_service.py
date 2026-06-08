@@ -1,4 +1,5 @@
 from neo4j import GraphDatabase
+from typing import Dict, List
 
 class GraphService:
 
@@ -318,6 +319,125 @@ class GraphService:
         return {
             "nodes": list(nodes.values()),
             "links": links
+        }
+
+    def get_graph_for_contributor(self, contributor_id: int, repo_id: int) -> Dict:
+        query = """
+            MATCH (c:Contributor {id:$contributor_id, repo_id: $repo_id})
+
+            OPTIONAL MATCH (c)-[:EXPERT_IN]->(t:Topic)
+
+            OPTIONAL MATCH (c)-[:CO_WORKED_WITH]-(other:Contributor)
+
+            OPTIONAL MATCH (c)-[:CONTRIBUTED_TO]->(:File)-[:PART_OF]->(r:Repository)
+
+            RETURN
+                c,
+                collect(DISTINCT t) AS topics,
+                collect(DISTINCT other) AS collaborators,
+                collect(DISTINCT r) AS repos
+        """
+
+        with self.driver.session() as session:
+
+            result = session.run(
+                query,
+                contributor_id=contributor_id,
+                repo_id=repo_id
+            ).single()
+
+        if not result:
+            return {
+                "nodes": [],
+                "links": []
+            }
+
+        contributor = result["c"]
+        topics = result["topics"]
+        collaborators = result["collaborators"]
+        repos = result["repos"]
+
+        nodes = []
+        links = []
+
+        contributor_node_id = (
+            f"contributor_{contributor['id']}"
+        )
+
+        nodes.append({
+                "id": contributor_node_id,
+                "label": contributor["username"],
+                "type": "contributor",
+            }
+        )
+
+        for repo in repos:
+            if repo is None:
+                continue
+            repo_node_id = f"repo_{repo['id']}"
+            nodes.append({
+                    "id": repo_node_id,
+                    "label": repo["name"],
+                    "type": "repository",
+                }
+            )
+
+            links.append({
+                    "source": repo_node_id,
+                    "target": contributor_node_id,
+                }
+            )
+
+        # --------------------------
+        # Topics
+        # --------------------------
+
+        for topic in topics:
+            if topic is None:
+                continue
+            topic_id = (
+                f"topic_{topic['name']}"
+            )
+            nodes.append({
+                    "id": topic_id,
+                    "label": topic["name"],
+                    "type": "topic",
+                }
+            )
+
+            links.append({
+                    "source": contributor_node_id,
+                    "target": topic_id,
+                }
+            )
+
+        # --------------------------
+        # Collaborators
+        # --------------------------
+
+        for collaborator in collaborators:
+            if collaborator is None:
+                continue
+            collaborator_id = (
+                f"collaborator_{collaborator['id']}"
+            )
+
+            nodes.append({
+                    "id": collaborator_id,
+                    "label": collaborator["username"],
+                    "type": "contributor",
+                }
+            )
+
+            links.append({
+                    "source": contributor_node_id,
+                    "target": collaborator_id,
+                }
+            )
+
+        return {
+            "nodes": nodes,
+            "links": links,
         }
 
     def repository_exists(self, repo_name):
