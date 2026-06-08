@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, String, DateTime
+from sqlalchemy import Column, Integer, String, DateTime, Text
 from sqlalchemy.orm import relationship
 
 from backend.app.db.postgres import Base
@@ -19,6 +19,8 @@ class Contributor(Base):
     followers = Column(Integer)
     public_repos = Column(Integer)
     github_created_at = Column(DateTime)
+    llm_summary = Column(Text)
+    last_summary_generated_at = Column(DateTime)
     commits = relationship("Commit", back_populates="contributor")
     issues = relationship("Issue", back_populates="contributor")
     pull_requests = relationship("PullRequest", back_populates="contributor")

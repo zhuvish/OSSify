@@ -3,8 +3,9 @@
 import { useEffect, useState } from "react";
 import { useRouter, useParams } from "next/navigation";
 import { getContributor } from "@/src/lib/contributors";
-import GraphView from "@/src/components/GraphView";
 import DigitalTwinCard from "@/src/components/DigitalTwinCard";
+import ContributorGraph from "@/src/components/ContributorGraph";
+import { Link as LinkIcon, ExternalLink, Code2, FolderGit2, Tags } from "lucide-react";
 
 export default function ContributorProfile() {
   const params = useParams();
@@ -80,139 +81,147 @@ export default function ContributorProfile() {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="ml-6 mr-6 space-y-6">
 
       {/* Header */}
-      <div className="bg-white rounded-2xl border border-slate-200 p-6">
-
+      <div className="px-2">
         <div className="flex items-center gap-5">
+          <img
+            src={profile.avatar_url}
+            className="w-22 h-22 rounded-full"
+          />
 
-          <div className="h-20 w-20 rounded-full bg-indigo-100 flex items-center justify-center text-3xl font-bold text-indigo-700">
-            {profile.username ? profile.username.charAt(0).toUpperCase() : 'U'}
-          </div>
+          <div className="flex-1">
+            <div className="flex items-center gap-3">
+              <h1 className="text-2xl font-bold">
+                {profile.username}
+              </h1>
 
-          <div>
-            <h1 className="text-3xl font-bold text-slate-900">{profile.username}</h1>
+              <a href={profile.profile_url}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex items-center gap-1.5 text-sm text-slate-500 hover:text-violet-600 transition-colors">
 
-            <p className="text-slate-500">
-              {profile.profile_url}
-            </p>
+                <LinkIcon size={14} />
+                <span>GitHub</span>
+                <ExternalLink size={14} />
+              </a>
+            </div>
 
-            <div className="flex gap-3 mt-3">
+            <div className="flex gap-3 mt-2">
 
-              <span className="px-3 py-1 rounded-full bg-indigo-100 text-indigo-700 text-sm">
+              <span className="flex items-center gap-2 px-1.5 py-0.5 rounded-full bg-indigo-100 text-indigo-700 text-sm">
+                <Code2 size={14} />
                 {profile.commit_count} Commits
               </span>
 
-              <span className="px-3 py-1 rounded-full bg-green-100 text-green-700 text-sm">
-                {profile.top_repositories ? profile.top_repositories.length : 0} Repositories
+              <span className="flex items-center gap-2 px-1.5 py-0.5 rounded-full bg-green-100 text-green-700 text-sm">
+                <FolderGit2 size={14} />
+                {profile.top_repositories?.length || 0} Repositories
               </span>
 
-              <span className="px-3 py-1 rounded-full bg-purple-100 text-purple-700 text-sm">
-                {(profile.expertise_areas || []).length} Expertise Areas
+              <span className="flex items-center gap-2 px-1.5 py-0.5 rounded-full bg-purple-100 text-purple-700 text-sm">
+                <Tags size={14} />
+                {(profile.expertise_areas || []).length} Topics
               </span>
 
             </div>
           </div>
-
         </div>
       </div>
 
       {/* Summary */}
-      <div className="bg-white rounded-2xl border border-slate-200 p-6">
+      <div className="bg-white rounded-xl border border-slate-200 p-6">
 
-        <h2 className="text-xl font-semibold mb-4">Contributor Summary</h2>
+        <div className="flex justify-between items-start mb-2">
+          <h2 className="text-xl font-semibold">
+            Contributor Summary
+          </h2>
 
-        <p className="text-slate-600 leading-7">
-          {/* {profile.semantic_expertise_summary && profile.semantic_expertise_summary.length ? (
-            profile.semantic_expertise_summary.map((s:any) => s.term).join(', ')
-          ) : (profile.bio || 'No summary available.')} */}
-          A contributor specialized in backend engineering and documentation, contributed to the stability and maintainability of the project. Their work spans code improvements, repository upkeep, and developer-facing enhancements. Through consistent contributions, they help ensure a reliable and well-documented experience for the Flask community.
-        </p>
+          <div className="flex flex-wrap gap-2 max-w-[50%] justify-end mr-10">
 
-      </div>
-
-      {/* Two-column section */}
-      <div className="grid grid-cols-3 gap-6">
-
-        {/* Repository Contributions */}
-        <div className="col-span-2 bg-white rounded-2xl border border-slate-200 p-6">
-
-          <h2 className="text-xl font-semibold mb-4">Repository Contributions</h2>
-
-          <ul className="space-y-4">
-            {(profile.top_repositories || []).map((r:any) => (
-              <li key={r.name}>
-                <p className="font-medium">{r.name}</p>
-                <p className="text-slate-500 text-sm">Top repository</p>
-              </li>
+            {(profile.expertise_areas || []).map((e: any) => (
+              <span key={e.domain} className="px-3 py-1 rounded-full bg-violet-100 text-indigo-700 text-sm">{e.domain}</span>
             ))}
-          </ul>
-
-        </div>
-
-        {/* Recent Activity */}
-        <div className="bg-white rounded-2xl border border-slate-200 p-6">
-
-          <h2 className="text-xl font-semibold mb-4">Recent Activity</h2>
-
-          <div className="space-y-4">
-            {(profile.recent_activity || []).map((a:any, idx:number) => (
-              <div key={idx}>
-                <p className="font-medium">{a.type === 'commit' ? (a.description || a.sha) : (a.description || '')}</p>
-                <p className="text-sm text-slate-500">{a.date}</p>
-              </div>
-            ))}
-
-            {(!profile.recent_activity || profile.recent_activity.length === 0) && (
-              <div className="text-sm text-slate-500">No recent activity available.</div>
-            )}
 
           </div>
-
         </div>
-
+        <div className="mt-4 border-t border-slate-100 pt-4"></div>
+        <p className="text-slate-600 leading-7">
+          {profile.semantic_expertise_summary || "No summary available."}
+        </p>
       </div>
 
-      {/* Expertise */}
-      <div className="bg-white rounded-2xl border border-slate-200 p-6">
-
-        <h2 className="text-xl font-semibold mb-4">Expertise</h2>
-
-        <div className="flex flex-wrap gap-3">
-
-          {(profile.expertise_areas || []).map((e:any) => (
-            <span key={e.domain} className="px-4 py-2 rounded-full bg-indigo-100 text-indigo-700">{e.domain}</span>
-          ))}
-
+      <div className="grid grid-cols-4 gap-6">
+        {/*Knowledge Graph*/}
+        <div className="col-span-3">
+          <div className="bg-white rounded-2xl border border-slate-200 p-6 h-full">
+            <h2 className="text-xl font-semibold mb-4">
+              Knowledge Graph
+            </h2>
+            <div className="h-[500px] rounded-xl border border-slate-100 overflow-hidden">
+              {typeof window !== "undefined" &&
+                localStorage.getItem("selected_repo_id") && (
+                  <ContributorGraph
+                    contributorId={contributorId}
+                  />
+                )}
+            </div>
+          </div>
         </div>
 
+        <div className="col-span-1 flex flex-col gap-6">
+          {/* Active Repositories*/}
+          <div className="bg-white rounded-2xl border border-slate-200 p-5">
+            <h2 className="font-semibold mb-4">
+              Active Repositories
+            </h2>
+            <div className="space-y-3">
+              {(profile.top_repositories || []).map((r: any) => (
+                <div
+                  key={r.name}
+                  className="
+                  rounded-xl
+                  border
+                  border-slate-100
+                  p-3
+                  "
+                >
+                  <div className="font-medium">
+                    {r.name}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+          <div className="bg-white rounded-2xl border border-slate-200 p-5">
+            <h2 className="font-semibold mb-4">
+              Recent Activity
+            </h2>
+            <div className="space-y-4">
+              {(profile.recent_activity || [])
+                .slice(0, 6)
+                .map((a: any, idx: number) => (
+                  <div
+                    key={idx}
+                    className="border-l-2 border-violet-200 pl-3">
+                    <div className="text-sm font-medium">
+                      {a.description || a.sha}
+                    </div>
+                    <div className="text-xs text-slate-500 mt-1">
+                      {a.date}
+                    </div>
+                  </div>
+                ))}
+            </div>
+          </div>
+        </div>
       </div>
 
       {/* Digital Twin Card */}
       <div className="mt-6">
         <DigitalTwinCard contributorId={contributorId} />
       </div>
-
-      {/* Graph */}
-      <div className="bg-white rounded-2xl border border-slate-200 p-6 mt-6">
-
-        <h2 className="text-xl font-semibold mb-4">Repository Connections</h2>
-
-        {/* show graph for the first repo the contributor contributed to if available */}
-        {profile.top_repositories && profile.top_repositories.length > 0 ? (
-          <div className="h-[350px] rounded-xl border-2 border-dashed border-slate-200">
-            {/* GraphView expects repo id; attempt to read from localStorage selected_repo_id */}
-            {typeof window !== 'undefined' && localStorage.getItem('selected_repo_id') && (
-              <GraphView repoId={Number(localStorage.getItem('selected_repo_id'))} />
-            )}
-          </div>
-        ) : (
-          <div className="h-[350px] rounded-xl border-2 border-dashed border-slate-200 flex items-center justify-center text-slate-400">No repository connections</div>
-        )}
-
-      </div>
-
     </div>
   );
 }

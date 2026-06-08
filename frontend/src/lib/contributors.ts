@@ -17,7 +17,7 @@ export async function getContributors(
 }
 
 export async function getContributor(contributorId: number) {
-  const res = await fetch(`${API_URL}/contributors/${contributorId}`);
+  const res = await fetch(`${API_URL}/contributors/${contributorId}/profile`);
   if (!res.ok) throw new Error("Failed to load contributor");
   return res.json();
 }
@@ -25,5 +25,15 @@ export async function getContributor(contributorId: number) {
 export async function searchContributors(q: string) {
   const res = await fetch(`${API_URL}/contributors/search?q=${encodeURIComponent(q)}`);
   if (!res.ok) throw new Error("Failed to search contributors");
+  return res.json();
+}
+
+export async function getContributorGraph(contributorId: number) {
+  const res = await fetch(`${API_URL}/contributors/${contributorId}/graph`);
+  if (!res.ok) {
+    throw new Error(
+      "Failed to load contributor graph"
+    );
+  }
   return res.json();
 }

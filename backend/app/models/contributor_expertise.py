@@ -8,6 +8,7 @@ class ContributorExpertise(Base):
 
     id = Column(Integer, primary_key=True, index=True)
     contributor_id = Column(Integer, ForeignKey("contributors.id"), nullable=False)
+    repo_id = Column(Integer, ForeignKey("repositories.id"), nullable=False)
     domain = Column(String, nullable=False, index=True)
     score = Column(Float, default=0.0)
     evidence_count = Column(Integer, default=0)

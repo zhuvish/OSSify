@@ -7,18 +7,17 @@ export default function TopicNode({ data }: any) {
             <div className="
       px-5
       py-3
-      bg-blue-50
+      bg-blue-400
       border
-      border-blue-200
+      border-blue-700
       rounded-xl
       shadow-sm
-      text-blue-700
       font-semibold
       min-w-[180px]
       text-center
       text-lg
     ">
-                {data.label}
+            📃 {data.label}
             </div>
             <Handle type="source" position={Position.Bottom} />
         </>

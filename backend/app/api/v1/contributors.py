@@ -17,7 +17,7 @@ def get_contributors(repo_id: int):
             SELECT
                 c.id,
                 c.username,
-
+                c.avatar_url,
                 COALESCE(
                     c.contributions_count,
                     COUNT(cm.id)
@@ -61,7 +61,8 @@ def get_contributors(repo_id: int):
                 "username": row.username,
                 "commit_count": int(row.contribution_count or 0),
                 "expertise_score": float(expertise_sum or 0.0),
-                "top_expertise": top_expertise
+                "top_expertise": top_expertise,
+                "avatar_url":row.avatar_url
             })
 
         return results

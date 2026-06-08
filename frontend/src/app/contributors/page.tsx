@@ -146,9 +146,14 @@ export default function ContributorsPage() {
 
                   <div className="flex items-center gap-4">
 
-                    <div className="h-14 w-14 rounded-full bg-indigo-100 text-indigo-700 flex items-center justify-center font-bold text-lg">
+                    {/* <div className="h-14 w-14 rounded-full bg-indigo-100 text-indigo-700 flex items-center justify-center font-bold text-lg">
                       {c.username ? c.username[0].toUpperCase() : "U"}
-                    </div>
+                    </div> */}
+
+                    <img
+                      src={c.avatar_url}
+                      className="w-22 h-22 rounded-full"
+                    />
 
                     <div>
                       <h2 className="text-lg font-semibold text-slate-900">{c.username}</h2>
