@@ -17,7 +17,7 @@ export async function getContributors(
 }
 
 export async function getContributor(contributorId: number) {
-  const res = await fetch(`${API_URL}/contributors/${contributorId}`);
+  const res = await fetch(`${API_URL}/contributors/${contributorId}/profile`);
   if (!res.ok) throw new Error("Failed to load contributor");
   return res.json();
 }
