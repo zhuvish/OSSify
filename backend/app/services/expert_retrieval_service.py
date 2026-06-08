@@ -397,16 +397,23 @@ def get_contributor_profile(contributor_id: int) -> Optional[Dict[str, Any]]:
         recent.sort(key=lambda x: x["date"] or "", reverse=True)
         recent = recent[:10]
 
-        # ── semantic expertise summary from Qdrant ──
-        semantic_summary = _generate_llm_summary(
-            contributor=contributor,
-            expertise_areas=expertise_areas,
-            commit_count=commit_count,
-            pr_count=pr_count,
-            issue_count=issue_count,
-            top_repos=top_repos,
-            recent_activity=recent,
-        )
+        if contributor.llm_summary:
+            summary = contributor.llm_summary
+
+        else:
+            semantic_summary = _generate_llm_summary(
+                contributor=contributor,
+                expertise_areas=expertise_areas,
+                commit_count=commit_count,
+                pr_count=pr_count,
+                issue_count=issue_count,
+                top_repos=top_repos,
+                recent_activity=recent,
+            )
+
+            contributor.llm_summary = summary
+
+            db.commit()
 
         return {
             "contributor_id": contributor.id,
