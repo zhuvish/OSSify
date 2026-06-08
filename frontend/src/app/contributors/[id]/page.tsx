@@ -145,54 +145,32 @@ export default function ContributorProfile() {
           </div>
         </div>
         <div className="mt-4 border-t border-slate-100 pt-4"></div>
-          <p className="text-slate-600 leading-7">
-            {profile.semantic_expertise_summary && profile.semantic_expertise_summary.length ? (
-              profile.semantic_expertise_summary.map((s:any) => s.term).join(', ')
-            ) : (profile.bio || 'No summary available.')}
-          </p>
-        </div>
-      
+        <p className="text-slate-600 leading-7">
+          {profile.semantic_expertise_summary && profile.semantic_expertise_summary.length ? (
+            profile.semantic_expertise_summary.map((s: any) => s.term).join(', ')
+          ) : (profile.bio || 'No summary available.')}
+        </p>
+      </div>
 
-      {/* Two-column section */}
-      <div className="grid grid-cols-3 gap-6">
-
-        {/* Repository Contributions */}
-        <div className="col-span-2 bg-white rounded-2xl border border-slate-200 p-6">
-
-          <h2 className="text-xl font-semibold mb-4">Repository Contributions</h2>
-
-          <ul className="space-y-4">
-            {(profile.top_repositories || []).map((r: any) => (
-              <li key={r.name}>
-                <p className="font-medium">{r.name}</p>
-                <p className="text-slate-500 text-sm">Top repository</p>
-              </li>
-            ))}
-          </ul>
-
-        </div>
-
-        {/* Recent Activity */}
-        <div className="bg-white rounded-2xl border border-slate-200 p-6">
-
-          <h2 className="text-xl font-semibold mb-4">Recent Activity</h2>
-
-          <div className="space-y-4">
-            {(profile.recent_activity || []).map((a: any, idx: number) => (
-              <div key={idx}>
-                <p className="font-medium">{a.type === 'commit' ? (a.description || a.sha) : (a.description || '')}</p>
-                <p className="text-sm text-slate-500">{a.date}</p>
-              </div>
-            ))}
-
-            {(!profile.recent_activity || profile.recent_activity.length === 0) && (
-              <div className="text-sm text-slate-500">No recent activity available.</div>
-            )}
-
+      <div className="grid grid-cols-4 gap-6">
+        {/*Knowledge Graph*/}
+        <div className="col-span-3">
+          <div className="bg-white rounded-2xl border border-slate-200 p-6 h-full">
+            <h2 className="text-xl font-semibold mb-4">
+              Knowledge Graph
+            </h2>
+            <div className="h-[500px] rounded-xl border border-slate-100 overflow-hidden">
+              {typeof window !== "undefined" &&
+                localStorage.getItem("selected_repo_id") && (
+                  <GraphView
+                    repoId={Number(
+                      localStorage.getItem("selected_repo_id")
+                    )}
+                  />
+                )}
+            </div>
           </div>
-
         </div>
-
       </div>
 
       {/* Digital Twin Card */}
