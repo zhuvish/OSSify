@@ -775,6 +775,10 @@ def build_contributor_graph(contributor_id: int):
                 == exp.domain
             )
             .filter(
+                ContributorExpertise.repo_id
+                == exp.repo_id
+            )
+            .filter(
                 ContributorExpertise.contributor_id
                 != contributor_id
             )
