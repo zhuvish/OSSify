@@ -5,6 +5,7 @@ import { useRouter, useParams } from "next/navigation";
 import { getContributor } from "@/src/lib/contributors";
 import GraphView from "@/src/components/GraphView";
 import DigitalTwinCard from "@/src/components/DigitalTwinCard";
+import { Link as LinkIcon, ExternalLink, Code2, FolderGit2, Tags } from "lucide-react";
 
 export default function ContributorProfile() {
   const params = useParams();
@@ -80,51 +81,52 @@ export default function ContributorProfile() {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="ml-6 mr-6 space-y-6">
 
       {/* Header */}
-      <div className="px-6">
-
+      <div className="px-2">
         <div className="flex items-center gap-5">
-
           <img
             src={profile.avatar_url}
-            className="w-24 h-24 rounded-full"
+            className="w-22 h-22 rounded-full"
           />
 
           <div className="flex-1">
-
             <div className="flex items-center gap-3">
               <h1 className="text-2xl font-bold">
                 {profile.username}
               </h1>
 
-              <a
-                href={profile.profile_url}
+              <a href={profile.profile_url}
                 target="_blank"
-                className="text-sm text-slate-500"
-              >
-                GitHub
+                rel="noopener noreferrer"
+                className="flex items-center gap-1.5 text-sm text-slate-500 hover:text-violet-600 transition-colors">
+
+                <LinkIcon size={14} />
+                <span>GitHub</span>
+                <ExternalLink size={14} />
               </a>
             </div>
 
-            <div className="flex gap-3 mt-3">
+            <div className="flex gap-3 mt-2">
 
-              <span className="px-3 py-1 rounded-full bg-indigo-100 text-indigo-700 text-sm">
+              <span className="flex items-center gap-2 px-1.5 py-0.5 rounded-full bg-indigo-100 text-indigo-700 text-sm">
+                <Code2 size={14} />
                 {profile.commit_count} Commits
               </span>
 
-              <span className="px-3 py-1 rounded-full bg-green-100 text-green-700 text-sm">
-                {profile.top_repositories ? profile.top_repositories.length : 0} Repositories
+              <span className="flex items-center gap-2 px-1.5 py-0.5 rounded-full bg-green-100 text-green-700 text-sm">
+                <FolderGit2 size={14} />
+                {profile.top_repositories?.length || 0} Repositories
               </span>
 
-              <span className="px-3 py-1 rounded-full bg-purple-100 text-purple-700 text-sm">
-                {(profile.expertise_areas || []).length} Expertise Areas
+              <span className="flex items-center gap-2 px-1.5 py-0.5 rounded-full bg-purple-100 text-purple-700 text-sm">
+                <Tags size={14} />
+                {(profile.expertise_areas || []).length} Topics
               </span>
 
             </div>
           </div>
-
         </div>
       </div>
 
