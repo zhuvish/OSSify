@@ -3,8 +3,8 @@
 import { useEffect, useState } from "react";
 import { useRouter, useParams } from "next/navigation";
 import { getContributor } from "@/src/lib/contributors";
-import GraphView from "@/src/components/GraphView";
 import DigitalTwinCard from "@/src/components/DigitalTwinCard";
+import ContributorGraph from "@/src/components/ContributorGraph";
 import { Link as LinkIcon, ExternalLink, Code2, FolderGit2, Tags } from "lucide-react";
 
 export default function ContributorProfile() {
@@ -162,10 +162,8 @@ export default function ContributorProfile() {
             <div className="h-[500px] rounded-xl border border-slate-100 overflow-hidden">
               {typeof window !== "undefined" &&
                 localStorage.getItem("selected_repo_id") && (
-                  <GraphView
-                    repoId={Number(
-                      localStorage.getItem("selected_repo_id")
-                    )}
+                  <ContributorGraph
+                    contributorId={contributorId}
                   />
                 )}
             </div>

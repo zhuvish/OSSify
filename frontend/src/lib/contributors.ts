@@ -27,3 +27,13 @@ export async function searchContributors(q: string) {
   if (!res.ok) throw new Error("Failed to search contributors");
   return res.json();
 }
+
+export async function getContributorGraph(contributorId: number) {
+  const res = await fetch(`${API_URL}/contributors/${contributorId}/graph`);
+  if (!res.ok) {
+    throw new Error(
+      "Failed to load contributor graph"
+    );
+  }
+  return res.json();
+}
