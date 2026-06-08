@@ -171,6 +171,32 @@ export default function ContributorProfile() {
             </div>
           </div>
         </div>
+
+        <div className="col-span-1 flex flex-col gap-6">
+          {/* Active Repositories*/}
+          <div className="bg-white rounded-2xl border border-slate-200 p-5">
+            <h2 className="font-semibold mb-4">
+              Active Repositories
+            </h2>
+            <div className="space-y-3">
+              {(profile.top_repositories || []).map((r: any) => (
+                <div
+                  key={r.name}
+                  className="
+                  rounded-xl
+                  border
+                  border-slate-100
+                  p-3
+                  "
+                >
+                  <div className="font-medium">
+                    {r.name}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
       </div>
 
       {/* Digital Twin Card */}
