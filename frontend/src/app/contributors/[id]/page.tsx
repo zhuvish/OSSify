@@ -196,6 +196,27 @@ export default function ContributorProfile() {
               ))}
             </div>
           </div>
+          <div className="bg-white rounded-2xl border border-slate-200 p-5">
+            <h2 className="font-semibold mb-4">
+              Recent Activity
+            </h2>
+            <div className="space-y-4">
+              {(profile.recent_activity || [])
+                .slice(0, 6)
+                .map((a: any, idx: number) => (
+                  <div
+                    key={idx}
+                    className="border-l-2 border-violet-200 pl-3">
+                    <div className="text-sm font-medium">
+                      {a.description || a.sha}
+                    </div>
+                    <div className="text-xs text-slate-500 mt-1">
+                      {a.date}
+                    </div>
+                  </div>
+                ))}
+            </div>
+          </div>
         </div>
       </div>
 
