@@ -1,4 +1,7 @@
-import { Crown } from "lucide-react";
+"use client";
+
+import { useRouter } from "next/navigation";
+import { Crown, ArrowRight, Users } from "lucide-react";
 
 interface Props {
   experts: any[];
@@ -7,37 +10,23 @@ interface Props {
 export default function TopExperts({
   experts,
 }: Props) {
+  const router = useRouter();
+
   return (
-    <div className="bg-white rounded-2xl p-5 border border-slate-200 shadow-sm ml-6">
+    <div className="bg-white rounded-2xl p-5 border border-slate-200 shadow-sm ml-6 h-full flex flex-col">
 
-      <div className="flex justify-between items-center mb-4">
-
-        <div className="flex items-center gap-2">
-          <Crown
-            size={24}
-            strokeWidth={1.5}
-            className="text-violet-500"
-          />
-
-          <h2 className="text-lg font-semibold">
-            Top Contributors
-          </h2>
-        </div>
-
-        <button
-          className="
-      text-xs
-      text-violet-600
-      hover:text-violet-700
-    "
-        >
-          View all →
-        </button>
-
+      <div className="flex items-center gap-2 mb-4">
+        <Crown
+          size={24}
+          strokeWidth={1.5}
+          className="text-violet-500"
+        />
+        <h2 className="text-lg font-semibold">
+          Top Contributors
+        </h2>
       </div>
 
-      <div className="space-y-3">
-
+      <div className="space-y-3 flex-1">
         {experts.map((expert, index) => (
           <div
             key={expert.id}
@@ -101,6 +90,18 @@ export default function TopExperts({
             </div>
           </div>
         ))}
+      </div>
+
+      {/* Spacer pushes button to bottom */}
+      <div className="mt-auto pt-4">
+        <button
+          onClick={() => router.push("/contributors")}
+          className="w-full flex items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm font-medium text-slate-700 hover:bg-slate-50 hover:border-violet-300 hover:text-violet-700 transition"
+        >
+          <Users size={16} />
+          View all contributors
+          <ArrowRight size={16} />
+        </button>
       </div>
     </div>
   );
