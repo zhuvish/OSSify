@@ -685,9 +685,12 @@ def _generate_llm_summary(contributor, expertise_areas, commit_count, pr_count, 
 
     from groq import Groq
 
-    client = Groq(
-        api_key=settings.GROQ_API_KEY
-    )
+    api_key = os.getenv("GROQ_API_KEY")
+
+    if not api_key:
+        raise ValueError("GROQ_API_KEY not configured")
+
+    client = Groq(api_key=api_key)
 
     response = client.chat.completions.create(
         model="llama-3.3-70b-versatile",
