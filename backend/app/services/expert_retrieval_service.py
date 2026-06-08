@@ -11,6 +11,7 @@ import os
 import re
 from collections import defaultdict
 from typing import Any, Dict, List, Optional
+from datetime import datetime, timedelta
 
 from backend.app.db.postgres import SessionLocal
 from backend.app.models.contributor import Contributor
@@ -397,10 +398,14 @@ def get_contributor_profile(contributor_id: int) -> Optional[Dict[str, Any]]:
         recent.sort(key=lambda x: x["date"] or "", reverse=True)
         recent = recent[:10]
 
-        if contributor.llm_summary:
-            summary = contributor.llm_summary
+        needs_regeneration = (
+            contributor.llm_summary is None
+            or contributor.last_summary_generated_at is None
+            or contributor.last_summary_generated_at <
+            datetime.utcnow() - timedelta(days=30)
+        )
 
-        else:
+        if needs_regeneration:
             semantic_summary = _generate_llm_summary(
                 contributor=contributor,
                 expertise_areas=expertise_areas,
@@ -410,10 +415,15 @@ def get_contributor_profile(contributor_id: int) -> Optional[Dict[str, Any]]:
                 top_repos=top_repos,
                 recent_activity=recent,
             )
-
-            contributor.llm_summary = summary
-
+            contributor.llm_summary = semantic_summary
+            contributor.last_summary_generated_at = (
+                datetime.utcnow()
+            )
             db.commit()
+
+        else:
+
+            summary = contributor.llm_summary
 
         return {
             "contributor_id": contributor.id,
