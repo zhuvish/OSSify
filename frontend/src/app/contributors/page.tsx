@@ -220,9 +220,9 @@ export default function ContributorsPage() {
 
                   {/* Expertise Tags */}
                   <div className="flex flex-wrap gap-1.5 mb-5 min-h-[28px]">
-                    {(c.top_expertise || []).slice(0, 4).map((skill: string) => (
+                    {(c.top_expertise || []).slice(0, 4).map((skill: string, idx: number) => (
                       <span
-                        key={skill}
+                        key={`${skill}-${idx}`}
                         className="px-2.5 py-1 rounded-full bg-violet-50 text-violet-700 text-xs font-medium border border-violet-200/50"
                       >
                         {skill}
