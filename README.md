@@ -1,6 +1,6 @@
 # OSSify 🚀
 
-**Contributor-Centric Repository Intelligence Platform**
+## Open-Source-Expertise-KG-with-Contributor-Digital-Twin
 
 OSSify is an AI-powered repository analysis platform that automatically discovers contributor expertise, builds repository knowledge graphs, enables semantic repository search, and generates Contributor Digital Twins for intelligent developer assistance.
 
@@ -24,7 +24,7 @@ OSSify is an AI-powered repository analysis platform that automatically discover
   * Database
   * DevOps
   * Testing
-  * Documentation
+  * Documentation, etc.
 
 * Confidence-based expert ranking
 
@@ -374,7 +374,7 @@ This project is licensed under the MIT License.
 
 # 👥 Authors
 
-- **Vaishnavi Singh**
-- **Shreshtha Aggarwal**
+- **Vaishnavi Singh** - [zhuvish](https://github.com/zhuvish)
+- **Shreshtha Aggarwal** - [ShreshthaAggarwal27](https://github.com/ShreshthaAggarwal27)
 
 Contributor-Centric Repository Intelligence using Knowledge Graphs, RAG, and Digital Twins.
