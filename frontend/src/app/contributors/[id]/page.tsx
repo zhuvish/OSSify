@@ -6,6 +6,7 @@ import { getContributor } from "@/src/lib/contributors";
 import DigitalTwinCard from "@/src/components/DigitalTwinCard";
 import ContributorGraph from "@/src/components/ContributorGraph";
 import { Link as LinkIcon, ExternalLink, Code2, FolderGit2, Tags } from "lucide-react";
+import ReactMarkdown from "react-markdown";
 
 export default function ContributorProfile() {
   const params = useParams();
@@ -147,9 +148,11 @@ export default function ContributorProfile() {
           </div>
         </div>
         <div className="mt-4 border-t border-slate-100 pt-4"></div>
-        <p className="text-slate-600 leading-7">
+        <div className="prose prose-slate max-w-none text-slate-600">
+          <ReactMarkdown>
           {profile.semantic_expertise_summary || "No summary available."}
-        </p>
+          </ReactMarkdown>
+        </div>
       </div>
 
       <div className="grid grid-cols-4 gap-6">

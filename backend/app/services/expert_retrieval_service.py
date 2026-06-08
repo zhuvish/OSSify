@@ -662,6 +662,16 @@ def _generate_llm_summary(contributor, expertise_areas, commit_count, pr_count, 
         INSTRUCTIONS
         ------------
         Write a 5-6 sentence summary.
+        Instructions:
+        1. Use Markdown to format the contributor profile summary
+        2. Bold the important expertise domains
+        3. Bold the repository and file names if used in the summary
+        4. Bold any stats that is given in the summary
+        4. Do NOT over use bold
+        5. Do NOT use bullet points
+        6. Do NOT use the headings
+        
+        Return only valid Markdown
 
         The summary should:
 
