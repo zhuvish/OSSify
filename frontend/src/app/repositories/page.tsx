@@ -5,7 +5,7 @@ import RepositoryCard from "@/src/components/RepositoryCard";
 import Sidebar from "@/src/components/Sidebar";
 import { getRepositories } from "@/src/lib/api";
 import { useRouter } from "next/navigation";
-import { Search, Grid3X3, List } from "lucide-react";
+import { Search, Grid3X3, List, FolderGit2 } from "lucide-react";
 
 export default function RepositoriesPage() {
   const [repos, setRepos] = useState<any[]>([]);
@@ -50,13 +50,18 @@ export default function RepositoriesPage() {
 
       {/* Header */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-        <div>
-          <h1 className="text-3xl font-bold text-slate-900 tracking-tight">
-            Repositories
-          </h1>
-          <p className="text-sm text-slate-500 mt-1">
-            Browse and manage your analyzed repositories
-          </p>
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 rounded-xl bg-violet-100 flex items-center justify-center">
+            <FolderGit2 size={22} className="text-violet-600" />
+          </div>
+          <div>
+            <h1 className="text-3xl font-bold text-slate-900 tracking-tight">
+              Repositories
+            </h1>
+            <p className="text-sm text-slate-500 mt-0.5">
+              Browse and manage your analyzed repositories
+            </p>
+          </div>
         </div>
 
         <div className="relative w-full sm:w-80">
