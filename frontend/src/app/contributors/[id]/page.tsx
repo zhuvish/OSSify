@@ -83,20 +83,30 @@ export default function ContributorProfile() {
     <div className="space-y-6">
 
       {/* Header */}
-      <div className="bg-white rounded-2xl border border-slate-200 p-6">
+      <div className="px-6">
 
         <div className="flex items-center gap-5">
 
-          <div className="h-20 w-20 rounded-full bg-indigo-100 flex items-center justify-center text-3xl font-bold text-indigo-700">
-            {profile.username ? profile.username.charAt(0).toUpperCase() : 'U'}
-          </div>
+          <img
+            src={profile.avatar_url}
+            className="w-24 h-24 rounded-full"
+          />
 
-          <div>
-            <h1 className="text-3xl font-bold text-slate-900">{profile.username}</h1>
+          <div className="flex-1">
 
-            <p className="text-slate-500">
-              {profile.profile_url}
-            </p>
+            <div className="flex items-center gap-3">
+              <h1 className="text-2xl font-bold">
+                {profile.username}
+              </h1>
+
+              <a
+                href={profile.profile_url}
+                target="_blank"
+                className="text-sm text-slate-500"
+              >
+                GitHub
+              </a>
+            </div>
 
             <div className="flex gap-3 mt-3">
 
@@ -119,18 +129,29 @@ export default function ContributorProfile() {
       </div>
 
       {/* Summary */}
-      <div className="bg-white rounded-2xl border border-slate-200 p-6">
+      <div className="bg-white rounded-xl border border-slate-200 p-6">
 
-        <h2 className="text-xl font-semibold mb-4">Contributor Summary</h2>
+        <div className="flex justify-between items-start mb-2">
+          <h2 className="text-xl font-semibold">
+            Contributor Summary
+          </h2>
 
-        <p className="text-slate-600 leading-7">
-          {/* {profile.semantic_expertise_summary && profile.semantic_expertise_summary.length ? (
-            profile.semantic_expertise_summary.map((s:any) => s.term).join(', ')
-          ) : (profile.bio || 'No summary available.')} */}
-          A contributor specialized in backend engineering and documentation, contributed to the stability and maintainability of the project. Their work spans code improvements, repository upkeep, and developer-facing enhancements. Through consistent contributions, they help ensure a reliable and well-documented experience for the Flask community.
-        </p>
+          <div className="flex flex-wrap gap-2 max-w-[50%] justify-end mr-10">
 
-      </div>
+            {(profile.expertise_areas || []).map((e: any) => (
+              <span key={e.domain} className="px-3 py-1 rounded-full bg-violet-100 text-indigo-700 text-sm">{e.domain}</span>
+            ))}
+
+          </div>
+        </div>
+        <div className="mt-4 border-t border-slate-100 pt-4"></div>
+          <p className="text-slate-600 leading-7">
+            {profile.semantic_expertise_summary && profile.semantic_expertise_summary.length ? (
+              profile.semantic_expertise_summary.map((s:any) => s.term).join(', ')
+            ) : (profile.bio || 'No summary available.')}
+          </p>
+        </div>
+      
 
       {/* Two-column section */}
       <div className="grid grid-cols-3 gap-6">
@@ -141,7 +162,7 @@ export default function ContributorProfile() {
           <h2 className="text-xl font-semibold mb-4">Repository Contributions</h2>
 
           <ul className="space-y-4">
-            {(profile.top_repositories || []).map((r:any) => (
+            {(profile.top_repositories || []).map((r: any) => (
               <li key={r.name}>
                 <p className="font-medium">{r.name}</p>
                 <p className="text-slate-500 text-sm">Top repository</p>
@@ -157,7 +178,7 @@ export default function ContributorProfile() {
           <h2 className="text-xl font-semibold mb-4">Recent Activity</h2>
 
           <div className="space-y-4">
-            {(profile.recent_activity || []).map((a:any, idx:number) => (
+            {(profile.recent_activity || []).map((a: any, idx: number) => (
               <div key={idx}>
                 <p className="font-medium">{a.type === 'commit' ? (a.description || a.sha) : (a.description || '')}</p>
                 <p className="text-sm text-slate-500">{a.date}</p>
@@ -174,45 +195,10 @@ export default function ContributorProfile() {
 
       </div>
 
-      {/* Expertise */}
-      <div className="bg-white rounded-2xl border border-slate-200 p-6">
-
-        <h2 className="text-xl font-semibold mb-4">Expertise</h2>
-
-        <div className="flex flex-wrap gap-3">
-
-          {(profile.expertise_areas || []).map((e:any) => (
-            <span key={e.domain} className="px-4 py-2 rounded-full bg-indigo-100 text-indigo-700">{e.domain}</span>
-          ))}
-
-        </div>
-
-      </div>
-
       {/* Digital Twin Card */}
       <div className="mt-6">
         <DigitalTwinCard contributorId={contributorId} />
       </div>
-
-      {/* Graph */}
-      <div className="bg-white rounded-2xl border border-slate-200 p-6 mt-6">
-
-        <h2 className="text-xl font-semibold mb-4">Repository Connections</h2>
-
-        {/* show graph for the first repo the contributor contributed to if available */}
-        {profile.top_repositories && profile.top_repositories.length > 0 ? (
-          <div className="h-[350px] rounded-xl border-2 border-dashed border-slate-200">
-            {/* GraphView expects repo id; attempt to read from localStorage selected_repo_id */}
-            {typeof window !== 'undefined' && localStorage.getItem('selected_repo_id') && (
-              <GraphView repoId={Number(localStorage.getItem('selected_repo_id'))} />
-            )}
-          </div>
-        ) : (
-          <div className="h-[350px] rounded-xl border-2 border-dashed border-slate-200 flex items-center justify-center text-slate-400">No repository connections</div>
-        )}
-
-      </div>
-
     </div>
   );
 }
