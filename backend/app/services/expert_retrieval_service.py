@@ -587,3 +587,92 @@ Answer:"""
     except Exception as e:
         logger.exception("LLM call failed")
         return f"Error generating answer: {e}"
+
+def _generate_llm_summary(contributor, expertise_areas, commit_count, pr_count, issue_count, top_repos, recent_activity):
+    top_domains = [
+        e["domain"]
+        for e in expertise_areas[:5]
+    ]
+
+    repo_names = [
+        r["name"]
+        for r in top_repos[:5]
+    ]
+
+    recent_text = "\n".join(
+        [
+            a["description"]
+            for a in recent_activity[:5]
+            if a.get("description")
+        ]
+    )
+
+    prompt = f"""
+        You are an expert technical analyst generating a contributor profile for an open-source engineering platform.
+
+        Your task is to write a concise, professional contributor summary based ONLY on the provided data.
+
+        CONTRIBUTOR
+        -----------
+        Username: {contributor.username}
+
+        ACTIVITY METRICS
+        ----------------
+        Commits: {commit_count}
+        Pull Requests: {pr_count}
+        Issues: {issue_count}
+
+        EXPERTISE AREAS
+        ---------------
+        {", ".join(top_domains)}
+
+        REPOSITORIES
+        ------------
+        {", ".join(repo_names)}
+
+        RECENT CONTRIBUTIONS
+        --------------------
+        {recent_text}
+
+        INSTRUCTIONS
+        ------------
+        Write a 5-6 sentence summary.
+
+        The summary should:
+
+        1. Describe the contributor's primary technical expertise.
+        2. Highlight the types of work they contribute to most often.
+        3. Mention notable repositories when relevant.
+        4. Infer contribution patterns from the activity data.
+        5. Sound like an engineering intelligence report, not a resume.
+        6. Be factual and evidence-based.
+
+        DO NOT:
+        - Invent technologies, projects, or achievements.
+        - Use generic praise such as "excellent developer", "highly skilled", "outstanding", etc.
+        - Mention information not present in the data.
+        - Use bullet points.
+
+        OUTPUT FORMAT
+        -------------
+        Return ONLY the summary paragraph.
+    """
+
+    from groq import Groq
+
+    client = Groq(
+        api_key=settings.GROQ_API_KEY
+    )
+
+    response = client.chat.completions.create(
+        model="llama-3.3-70b-versatile",
+        messages=[
+            {
+                "role": "user",
+                "content": prompt
+            }
+        ],
+        temperature=0.3,
+    )
+
+    return response.choices[0].message.content
