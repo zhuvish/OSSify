@@ -7,12 +7,11 @@ export default function ContributorNode({ data }: any) {
             <div className="
       px-4
       py-3
-      bg-emerald-50
+      bg-emerald-400
       border
       border-emerald-200
       rounded-xl
       shadow-sm
-      text-emerald-700
       min-w-[140px]
       text-center
       font-medium
