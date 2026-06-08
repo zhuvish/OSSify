@@ -148,9 +148,7 @@ export default function ContributorProfile() {
         </div>
         <div className="mt-4 border-t border-slate-100 pt-4"></div>
         <p className="text-slate-600 leading-7">
-          {profile.semantic_expertise_summary && profile.semantic_expertise_summary.length ? (
-            profile.semantic_expertise_summary.map((s: any) => s.term).join(', ')
-          ) : (profile.bio || 'No summary available.')}
+          {profile.semantic_expertise_summary || "No summary available."}
         </p>
       </div>
 
