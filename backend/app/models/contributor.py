@@ -20,6 +20,7 @@ class Contributor(Base):
     public_repos = Column(Integer)
     github_created_at = Column(DateTime)
     llm_summary = Column(Text)
+    last_summary_generated_at = Column(DateTime)
     commits = relationship("Commit", back_populates="contributor")
     issues = relationship("Issue", back_populates="contributor")
     pull_requests = relationship("PullRequest", back_populates="contributor")
