@@ -5,7 +5,7 @@ import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { getContributors, searchContributors } from "@/src/lib/contributors";
 import ContributorSearch from "@/src/components/ContributorSearch";
-import { Search, Code2, GitCommit, Award, ArrowUpRight } from "lucide-react";
+import { Search, Code2, GitCommit, Award, ArrowUpRight, Users } from "lucide-react";
 
 type SortBy = "expertise" | "contributions" | "name";
 
@@ -100,13 +100,18 @@ export default function ContributorsPage() {
     <div className="px-6 py-6 max-w-7xl mx-auto space-y-8">
       {/* Header */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-        <div>
-          <h1 className="text-3xl font-bold text-slate-900 tracking-tight">
-            Contributors
-          </h1>
-          <p className="text-sm text-slate-500 mt-1">
-            Search, sort and filter contributors for the selected repository
-          </p>
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 rounded-xl bg-violet-100 flex items-center justify-center">
+            <Users size={22} className="text-violet-600" />
+          </div>
+          <div>
+            <h1 className="text-3xl font-bold text-slate-900 tracking-tight">
+              Contributors
+            </h1>
+            <p className="text-sm text-slate-500 mt-0.5">
+              Search, sort and filter contributors for the selected repository
+            </p>
+          </div>
         </div>
 
         <div className="flex items-center gap-3 flex-wrap">
