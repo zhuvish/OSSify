@@ -423,7 +423,7 @@ def get_contributor_profile(contributor_id: int) -> Optional[Dict[str, Any]]:
 
         else:
 
-            summary = contributor.llm_summary
+            semantic_summary = contributor.llm_summary
 
         return {
             "contributor_id": contributor.id,
