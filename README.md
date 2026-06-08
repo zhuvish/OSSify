@@ -265,6 +265,163 @@ GROQ_API_KEY=
 ELEVENLABS_API_KEY=
 ```
 
+# 🐳 Docker Setup
+
+## PostgreSQL
+
+```bash
+docker run --name oeg-postgres \
+  -e POSTGRES_USER=postgres \
+  -e POSTGRES_PASSWORD=postgres \
+  -e POSTGRES_DB=oeg_db \
+  -p 5432:5432 \
+  -d postgres:16
+```
+
+### Verify Container
+
+```bash
+docker ps
+```
+
+### Connect to Database
+
+```bash
+docker exec -it oeg-postgres psql -U postgres -d oeg_db
+```
+
+---
+
+## Qdrant
+
+```bash
+docker run \
+  --name oeg-qdrant \
+  -p 6333:6333 \
+  -p 6334:6334 \
+  -d qdrant/qdrant
+```
+
+### Dashboard
+
+```text
+http://localhost:6333/dashboard
+```
+
+---
+
+## Neo4j
+
+```bash
+docker run \
+  --name oeg-neo4j \
+  -p 7474:7474 \
+  -p 7687:7687 \
+  -e NEO4J_AUTH=neo4j/password \
+  -d neo4j:latest
+```
+
+### Browser
+
+```text
+http://localhost:7474
+```
+
+### Login Credentials
+
+```text
+Username: neo4j
+Password: password
+```
+
+---
+
+## Start Existing Containers
+
+```bash
+docker start oeg-postgres
+docker start oeg-qdrant
+docker start oeg-neo4j
+```
+
+---
+
+## Stop Containers
+
+```bash
+docker stop oeg-postgres
+docker stop oeg-qdrant
+docker stop oeg-neo4j
+```
+
+---
+
+## Restart Containers
+
+```bash
+docker restart oeg-postgres
+docker restart oeg-qdrant
+docker restart oeg-neo4j
+```
+
+---
+
+## View Running Containers
+
+```bash
+docker ps
+```
+
+---
+
+## View All Containers
+
+```bash
+docker ps -a
+```
+
+---
+
+## View Logs
+
+### PostgreSQL
+
+```bash
+docker logs oeg-postgres
+```
+
+### Qdrant
+
+```bash
+docker logs oeg-qdrant
+```
+
+### Neo4j
+
+```bash
+docker logs oeg-neo4j
+```
+
+---
+
+## Remove Containers
+
+```bash
+docker rm -f oeg-postgres
+docker rm -f oeg-qdrant
+docker rm -f oeg-neo4j
+```
+
+---
+
+## Remove Images
+
+```bash
+docker rmi postgres:16
+docker rmi qdrant/qdrant
+docker rmi neo4j:latest
+```
+
 ---
 
 # 📈 Example Workflow
