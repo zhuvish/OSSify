@@ -96,22 +96,6 @@ export default function ContributorsPage() {
     return list;
   }, [contributors, query, sortBy, topicFilter]);
 
-  function getExpertiseStrength(score: number): number {
-    // Normalize expertise score to 0-100 for progress bar
-    return Math.min(Math.round((score || 0) * 20), 100);
-  }
-
-  function getProgressColor(score: number): string {
-    if (score >= 80) return "bg-gradient-to-r from-violet-500 to-indigo-600";
-    if (score >= 50) return "bg-gradient-to-r from-violet-400 to-indigo-500";
-    if (score >= 30) return "bg-gradient-to-r from-violet-300 to-indigo-400";
-    return "bg-gradient-to-r from-slate-300 to-slate-400";
-  }
-
-  function getInitial(name: string): string {
-    return (name?.[0] || "U").toUpperCase();
-  }
-
   return (
     <div className="px-6 py-6 max-w-7xl mx-auto space-y-8">
       {/* Header */}
@@ -189,9 +173,6 @@ export default function ContributorsPage() {
           {/* Card Grid */}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {filtered.map((c) => {
-              const expertiseStrength = getExpertiseStrength(c.expertise_score);
-              const progressColor = getProgressColor(expertiseStrength);
-
               return (
                 <div
                   key={c.id}
@@ -254,20 +235,6 @@ export default function ContributorsPage() {
                       <p className="text-lg font-bold text-violet-700">
                         {Math.round((c.expertise_score || 0) * 10) / 10}
                       </p>
-                    </div>
-                  </div>
-
-                  {/* Expertise Strength Progress Bar */}
-                  <div className="mb-5">
-                    <div className="flex justify-between items-center mb-1.5">
-                      <span className="text-xs font-medium text-slate-500">Expertise Strength</span>
-                      <span className="text-xs font-semibold text-slate-700">{expertiseStrength}%</span>
-                    </div>
-                    <div className="w-full h-2 bg-slate-100 rounded-full overflow-hidden">
-                      <div
-                        className={`h-full rounded-full transition-all duration-500 ${progressColor}`}
-                        style={{ width: `${expertiseStrength}%` }}
-                      />
                     </div>
                   </div>
 
