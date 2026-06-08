@@ -1,7 +1,7 @@
-from fastapi import APIRouter
+from fastapi import APIRouter, HTTPException
 from typing import Optional
 
-from backend.app.services.expert_retrieval_service import get_contributor_profile
+from backend.app.services.expert_retrieval_service import get_contributor_profile, build_contributor_graph
 
 router = APIRouter()
 
@@ -18,3 +18,8 @@ def contributor_profile(contributor_id: int):
         )
 
     return profile
+
+@router.get("/contributors/{contributor_id}/graph")
+def contributor_graph(contributor_id: int):
+    data = build_contributor_graph(contributor_id)
+    return data

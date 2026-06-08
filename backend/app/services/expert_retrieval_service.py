@@ -704,3 +704,107 @@ def _generate_llm_summary(contributor, expertise_areas, commit_count, pr_count, 
     )
 
     return response.choices[0].message.content
+
+def build_contributor_graph(contributor_id: int):
+    db = SessionLocal()
+    
+    contributor = (
+        db.query(Contributor)
+        .filter(
+            Contributor.id == contributor_id
+        )
+        .first()
+    )
+
+    expertise_rows = (
+        db.query(ContributorExpertise)
+        .filter(
+            ContributorExpertise.contributor_id
+            == contributor_id
+        )
+        .order_by(
+            ContributorExpertise.score.desc()
+        )
+        .limit(5)
+        .all()
+    )
+
+    nodes = []
+    links = []
+
+    nodes.append({
+        "id": f"contributor_{contributor.id}",
+        "label": contributor.username,
+        "type": "contributor"
+    })
+
+    for exp in expertise_rows:
+        topic_id = (
+            f"topic_{exp.domain}"
+        )
+
+        nodes.append({
+            "id": topic_id,
+            "label": exp.domain,
+            "type": "topic"
+        })
+
+        links.append({
+            "source":
+                f"contributor_{contributor.id}",
+            "target": topic_id,
+            "weight": exp.score
+        })
+
+        similar_contributors = (
+            db.query(
+                ContributorExpertise
+            )
+            .filter(
+                ContributorExpertise.domain
+                == exp.domain
+            )
+            .filter(
+                ContributorExpertise.contributor_id
+                != contributor_id
+            )
+            .order_by(
+                ContributorExpertise.score.desc()
+            )
+            .limit(3)
+            .all()
+        )
+
+        for sim in similar_contributors:
+            other = (
+                db.query(Contributor)
+                .filter(
+                    Contributor.id
+                    == sim.contributor_id
+                )
+                .first()
+            )
+
+            if not other:
+                continue
+            
+            nodes.append({
+                "id":
+                    f"contributor_{other.id}",
+                "label":
+                    other.username,
+                "type":
+                    "contributor"
+            })
+
+            links.append({
+                "source": topic_id,
+                "target":
+                    f"contributor_{other.id}",
+                "weight": sim.score
+            })
+
+    return {
+        "nodes": nodes,
+        "links": links
+    }
